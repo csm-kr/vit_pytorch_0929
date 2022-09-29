@@ -52,23 +52,23 @@ def test_and_evaluate(epoch, vis, test_loader, model, criterion, opts, xl_log_sa
 
     with torch.no_grad():
         for idx, data in enumerate(test_loader):
-            image = data[0].to(int(opts.gpu_ids[opts.rank]))
-            label = data[1].to(int(opts.gpu_ids[opts.rank]))
+            images = data[0].to(int(opts.gpu_ids[opts.rank]))
+            labels = data[1].to(int(opts.gpu_ids[opts.rank]))
 
-            output = model(image)
-            loss = criterion(output, label)
+            outputs = model(images)
+            loss = criterion(outputs, labels)
             val_avg_loss += loss.item()
 
-            # rank 1
-            _, pred = torch.max(output, 1)
-            total += label.size(0)
-            correct_top1 += (pred == label).sum().item()
-
+            # top 1
+            outputs = torch.softmax(outputs, dim=1)
+            pred, idx_top1 = outputs.max(-1)
+            correct_top1 += torch.eq(labels, idx_top1).sum().item()
+            total += labels.size(0)
             # ------------------------------------------------------------------------------
-            # rank 5
-            _, rank5 = output.topk(5, 1, True, True)
-            rank5 = rank5.t()
-            correct5 = rank5.eq(label.view(1, -1).expand_as(rank5))
+            # top 5
+            _, idx_top5 = outputs.topk(5, 1, True, True)
+            idx_top5 = idx_top5.t()
+            correct5 = idx_top5.eq(labels.view(1, -1).expand_as(idx_top5))
 
             # ------------------------------------------------------------------------------
             for k in range(5):

@@ -14,13 +14,14 @@ def train_one_epoch(epoch, vis, train_loader, model, optimizer, criterion, sched
         images = images.to(int(opts.gpu_ids[opts.rank]))
         labels = labels.to(int(opts.gpu_ids[opts.rank]))
 
-        output = model(images)
-        loss = criterion(output, labels)
+        outputs = model(images)
+        loss = criterion(outputs, labels)
 
         # ----------- update -----------
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
+
         scheduler.step()
 
         # get lr

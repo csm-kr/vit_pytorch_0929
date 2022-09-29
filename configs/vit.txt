@@ -2,8 +2,6 @@
 name = vit
 
 # data
-# gpu_ids = [0, 1, 2, 3]
-gpu_ids = [0]
 data_type = cifar10
 
 # visdom
@@ -26,3 +24,7 @@ num_heads=12
 mlp_ratio=2.
 # is_cls_token
 
+# distributed
+rank = 0
+# gpu_ids = [0, 1, 2, 3]
+gpu_ids = [0]

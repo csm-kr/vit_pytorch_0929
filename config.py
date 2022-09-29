@@ -40,14 +40,14 @@ def get_args_parser():
     parser.add_argument('--epoch', type=int, default=310)
     parser.add_argument('--warmup', type=int, default=10)
     parser.add_argument('--batch_size', type=int)
-    parser.add_argument('--rank', type=int, default=0)
     parser.add_argument('--save_step', type=int, default=280, help='if save_step < epoch, then save')
     parser.add_argument('--num_workers', type=int, default=16)
 
     # FIXME
-    parser.add_argument('--gpu_ids', nargs="+", default=['0'])
-    parser.add_argument('--world_size', type=int, default=0)
-    parser.set_defaults(is_multi_gpu=False)
+    parser.set_defaults(distributed=False)
+    parser.add_argument('--gpu_ids', nargs="+")
+    parser.add_argument('--rank', type=int)
+    parser.add_argument('--world_size', type=int)
 
     # FIXME 10 to 1000
     parser.add_argument('--start_epoch', type=int, default=0)

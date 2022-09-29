@@ -19,7 +19,7 @@ def main_worker(rank, opts):
     print(opts)
 
     # 2. ** device **
-    device = torch.device('cuda:{}'.format(0) if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cuda:{}'.format(int(opts.gpu_ids[opts.rank])))
 
     # 3. ** visdom **
     vis = visdom.Visdom(port=opts.visdom_port)
@@ -64,7 +64,22 @@ def main_worker(rank, opts):
 
 
 if __name__ == '__main__':
+    import torch.multiprocessing as mp
     from config import get_args_parser
+
     parser = configargparse.ArgumentParser('Vit', parents=[get_args_parser()])
     opts = parser.parse_args()
-    main_worker(opts.rank, opts)
+
+    if len(opts.gpu_ids) > 1:
+        opts.distributed = True
+
+    opts.world_size = len(opts.gpu_ids)
+    opts.num_workers = len(opts.gpu_ids) * 4
+
+    if opts.distributed:
+        mp.spawn(main_worker,
+                 args=(opts,),
+                 nprocs=opts.world_size,
+                 join=True)
+    else:
+        main_worker(opts.rank, opts)
