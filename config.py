@@ -37,11 +37,11 @@ def get_args_parser():
 
     # train
     parser.add_argument('--lr', type=float, default=0.001)
-    parser.add_argument('--epoch', type=int, default=310)
-    parser.add_argument('--warmup', type=int, default=10)
+    parser.add_argument('--epoch', type=int)
+    parser.add_argument('--warmup', type=int)
     parser.add_argument('--batch_size', type=int)
-    parser.add_argument('--save_step', type=int, default=280, help='if save_step < epoch, then save')
-    parser.add_argument('--num_workers', type=int, default=16)
+    parser.add_argument('--save_step', type=int, default=40, help='if save_step < epoch, then save')
+    parser.add_argument('--num_workers', type=int)
 
     # FIXME
     parser.set_defaults(distributed=False)
@@ -54,8 +54,6 @@ def get_args_parser():
     parser.add_argument('--weight_decay', type=float, default=5e-5)  # 5e-2 # 1e-2 # 5e-3 # 1e-3 # 5e-4 # 1e-4
     parser.add_argument('--log_dir', type=str, default='./logs')
 
-    # FIXME
-    parser.add_argument('--input_size', type=int, default=0, help='set the size of images')
     parser.add_argument('--test_epoch', type=str, default='best')
     return parser
 

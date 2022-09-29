@@ -22,8 +22,6 @@ def train_one_epoch(epoch, vis, train_loader, model, optimizer, criterion, sched
         loss.backward()
         optimizer.step()
 
-        scheduler.step()
-
         # get lr
         for param_group in optimizer.param_groups:
             lr = param_group['lr']
@@ -34,7 +32,7 @@ def train_one_epoch(epoch, vis, train_loader, model, optimizer, criterion, sched
         # visualization
         # if (i % opts.vis_step == 0 or i == len(train_loader) - 1) and opts.rank == 0:
         if i % opts.vis_step == 0 and opts.rank == 0:
-            print('Epoch [{0}/{1}], Iter [{2}/{3}], Loss: {4:.4f}, LR: {5:.5f}, Time: {6:.2f}'.format(epoch,
+            print('Epoch [{0}/{1}], Iter [{2}/{3}], Loss: {4:.4f}, lr: {5:.5f}, Time: {6:.2f}'.format(epoch,
                                                                                                       opts.epoch,
                                                                                                       i,
                                                                                                       len(train_loader),

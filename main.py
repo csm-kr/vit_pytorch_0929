@@ -61,6 +61,7 @@ def main_worker(rank, opts):
 
         # 11. test
         result_best = test_and_evaluate(epoch, vis, test_loader, model, criterion, opts, xl_log_saver, result_best, is_load=False)
+        scheduler.step()
 
 
 if __name__ == '__main__':
