@@ -37,7 +37,7 @@ The goal of this repo is to find the analysis of various components of ViT (e.g.
 
 | model               | Batch size     | resolution | Top1-Acc          | Top5-Acc | Val Loss    | Params  |
 |---------------------|----------------|------------|-------------------|----------|-------------| ------  |
-| ViT(vaswani)        | 128            | 32 x 32    | 0.7044            | -        | -           |         |
+| ViT(vaswani)        | 128            | 32 x 32    | -                 | -        | -           |         |
 
 
 #### Imagenet1K

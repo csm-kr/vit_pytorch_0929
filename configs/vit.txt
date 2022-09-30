@@ -9,7 +9,7 @@ visdom_port = 9097
 
 # train
 batch_size = 128
-epoch = 50
+epoch = 100
 lr = 0.001
 rank = 0
 

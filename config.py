@@ -41,7 +41,7 @@ def get_args_parser():
     parser.add_argument('--warmup', type=int)
     parser.add_argument('--batch_size', type=int)
     parser.add_argument('--save_step', type=int, default=40, help='if save_step < epoch, then save')
-    parser.add_argument('--num_workers', type=int)
+    parser.add_argument('--num_workers', type=int, default=0)
 
     # FIXME
     parser.set_defaults(distributed=False)

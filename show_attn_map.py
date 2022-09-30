@@ -102,4 +102,4 @@ if __name__ == '__main__':
         img_vis = np.array(img.permute(1, 2, 0), np.float32)  # C, W, H
         img_vis *= std
         img_vis += mean
-        show_attention_map(epoch='best', model=model, batch_img=batch_img, im=img_vis, opts=opts)
+        show_attention_map(epoch=41, model=model, batch_img=batch_img, im=img_vis, opts=opts)
