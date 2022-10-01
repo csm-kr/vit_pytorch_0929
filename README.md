@@ -27,6 +27,12 @@ The goal of this repo is to find the analysis of various components of ViT (e.g.
 
 ![results](./figures/attention_maps.JPG)
 
+##### MNIST
+
+| model               | Batch size     | resolution | Top1-Acc          | Top5-Acc | Val Loss    | Params  |
+|---------------------|----------------|------------|-------------------|----------|-------------|---------|
+| ViT(vaswani)        | 128            | 28 x 28    | -                 | -        | -           | 2692426 | 
+
 ##### CIFAR10
 
 | model               | Batch size     | resolution | Top1-Acc          | Top5-Acc | Val Loss    | Params  |
