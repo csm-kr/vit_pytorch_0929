@@ -42,7 +42,7 @@ def train_one_epoch(epoch, vis, train_loader, model, optimizer, criterion, sched
             vis.line(X=torch.ones((1, 1)) * i + epoch * len(train_loader),
                      Y=torch.Tensor([loss]).unsqueeze(0),
                      update='append',
-                     win='loss',
+                     win='train_loss',
                      opts=dict(x_label='step',
                                y_label='loss',
                                title='train loss for {}'.format(opts.name),

@@ -56,14 +56,13 @@ def test_and_evaluate(epoch, vis, test_loader, model, criterion, opts, xl_log_sa
 
             outputs = model(images)
             loss = criterion(outputs, labels)
-            loss_val += loss.item()
 
             n += images.size(0)
             acc = accuracy(outputs, labels, (1, 5))
             acc1 = acc[0]
             acc5 = acc[1]
 
-            loss_val += float(loss_val * images.size(0))
+            loss_val += float(loss.item() * images.size(0))
             acc1_val += float(acc1 * images.size(0))
             acc5_val += float(acc5 * images.size(0))
 
@@ -76,9 +75,9 @@ def test_and_evaluate(epoch, vis, test_loader, model, criterion, opts, xl_log_sa
                 vis.line(X=torch.ones((1, 3)) * epoch,
                          Y=torch.Tensor([acc1, acc5, loss_val]).unsqueeze(0),
                          update='append',
-                         win='test_loss_acc',
+                         win='test_loss_and_acc',
                          opts=dict(x_label='epoch',
-                                   y_label='test_loss and acc',
+                                   y_label='test loss and acc',
                                    title='test loss and accuracy for {}'.format(opts.name),
                                    legend=['accuracy_top1', 'accuracy_top5', 'avg_loss']))
 
