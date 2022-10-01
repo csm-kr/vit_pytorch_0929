@@ -5,11 +5,11 @@ name = vit
 data_type = cifar10
 
 # visdom
-visdom_port = 9097
+visdom_port = 8097
 
 # train
 batch_size = 128
-epoch = 100
+epoch = 50
 lr = 0.001
 rank = 0
 
@@ -26,5 +26,5 @@ mlp_ratio=2.
 
 # distributed
 rank = 0
-# gpu_ids = [0, 1, 2, 3]
 gpu_ids = [0]
+# gpu_ids = [0, 1, 2, 3]

@@ -1,5 +1,6 @@
 import os
 import torch
+from utils import accuracy
 
 
 def test_and_evaluate(epoch, vis, test_loader, model, criterion, opts, xl_log_saver=None, result_best=None, is_load=True):
@@ -45,10 +46,8 @@ def test_and_evaluate(epoch, vis, test_loader, model, criterion, opts, xl_log_sa
     # 2. forward the whole test dataset & calculate performance
     model.eval()
 
-    val_avg_loss = 0
-    correct_top1 = 0
-    correct_top5 = 0
-    total = 0
+    # for evaluation.
+    loss_val, acc1_val, acc5_val, n = 0, 0, 0, 0
 
     with torch.no_grad():
         for idx, data in enumerate(test_loader):
@@ -57,62 +56,53 @@ def test_and_evaluate(epoch, vis, test_loader, model, criterion, opts, xl_log_sa
 
             outputs = model(images)
             loss = criterion(outputs, labels)
-            val_avg_loss += loss.item()
+            loss_val += loss.item()
 
-            # top 1
-            outputs = torch.softmax(outputs, dim=1)
-            pred, idx_top1 = outputs.max(-1)
-            correct_top1 += torch.eq(labels, idx_top1).sum().item()
-            total += labels.size(0)
-            # ------------------------------------------------------------------------------
-            # top 5
-            _, idx_top5 = outputs.topk(5, 1, True, True)
-            idx_top5 = idx_top5.t()
-            correct5 = idx_top5.eq(labels.view(1, -1).expand_as(idx_top5))
+            n += images.size(0)
+            acc = accuracy(outputs, labels, (1, 5))
+            acc1 = acc[0]
+            acc5 = acc[1]
 
-            # ------------------------------------------------------------------------------
-            for k in range(5):
-                correct_k = correct5[:k+1].reshape(-1).float().sum(0, keepdim=True)
+            loss_val += float(loss_val * images.size(0))
+            acc1_val += float(acc1 * images.size(0))
+            acc5_val += float(acc5 * images.size(0))
 
-            correct_top5 += correct_k.item()
-
-        accuracy_top1 = correct_top1 / total
-        accuracy_top5 = correct_top5 / total
-        val_avg_loss = val_avg_loss / len(test_loader)  # make mean loss
+        acc1 = (acc1_val / n) / 100
+        acc5 = (acc5_val / n) / 100
+        loss_val = loss_val / n  # make mean loss
 
         if opts.rank == 0:
             if vis is not None:
                 vis.line(X=torch.ones((1, 3)) * epoch,
-                         Y=torch.Tensor([accuracy_top1, accuracy_top5, val_avg_loss]).unsqueeze(0),
+                         Y=torch.Tensor([acc1, acc5, loss_val]).unsqueeze(0),
                          update='append',
                          win='test_loss_acc',
                          opts=dict(x_label='epoch',
                                    y_label='test_loss and acc',
-                                   title='test_loss and accuracy',
+                                   title='test loss and accuracy for {}'.format(opts.name),
                                    legend=['accuracy_top1', 'accuracy_top5', 'avg_loss']))
+
             print("")
-            print("top-1 percentage :  {0:0.3f}%".format(correct_top1 / total * 100))
-            print("top-5 percentage :  {0:0.3f}%".format(correct_top5 / total * 100))
+            print("top-1 percentage :  {0:0.3f}%".format(acc1 * 100))
+            print("top-5 percentage :  {0:0.3f}%".format(acc5 * 100))
 
             # xl_log_saver
             if opts.rank == 0:
                 if xl_log_saver is not None:
                     if opts.num_classes == 1000:
-                        xl_log_saver.insert_each_epoch(contents=(epoch, accuracy_top1, accuracy_top5, val_avg_loss))
+                        xl_log_saver.insert_each_epoch(contents=(epoch, acc1, acc5, loss_val))
                     elif opts.num_classes == 10 or opts.num_classes == 100:
-                        xl_log_saver.insert_each_epoch(contents=(epoch, accuracy_top1, val_avg_loss))
+                        xl_log_saver.insert_each_epoch(contents=(epoch, acc1, loss_val))
 
             # set result_best
             if result_best is not None:
-                if result_best['accuracy_top1'] < correct_top1:
-                    print("update best model")
+                if result_best['accuracy_top1'] < acc1:
+                    print("update best model from {:.4f} to {:.4f}".format(result_best['accuracy_top1'], acc1))
                     result_best['epoch'] = epoch
-                    result_best['accuracy_top1'] = correct_top1
-                    result_best['val_loss'] = val_avg_loss
-
+                    result_best['accuracy_top1'] = acc1
+                    result_best['val_loss'] = loss_val
                     if checkpoint is None:
                         checkpoint = {'epoch': epoch,
                                       'model_state_dict': model.state_dict()}
                     torch.save(checkpoint, os.path.join(opts.log_dir, opts.name, 'saves', opts.name + '.best.pth.tar'))
-
             return result_best
