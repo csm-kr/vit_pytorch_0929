@@ -46,7 +46,7 @@ def train_one_epoch(epoch, vis, train_loader, model, optimizer, criterion, sched
                      opts=dict(x_label='step',
                                y_label='loss',
                                title='train loss for {}'.format(opts.name),
-                               legend=['total_loss']))
+                               legend=['train_loss']))
 
     # save pth file
     if opts.rank == 0:

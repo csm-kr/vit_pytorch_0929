@@ -79,7 +79,7 @@ def test_and_evaluate(epoch, vis, test_loader, model, criterion, opts, xl_log_sa
                          opts=dict(x_label='epoch',
                                    y_label='test loss and acc',
                                    title='test loss and accuracy for {}'.format(opts.name),
-                                   legend=['accuracy_top1', 'accuracy_top5', 'avg_loss']))
+                                   legend=['acc1', 'acc5', 'test_loss']))
 
             print("")
             print("top-1 percentage :  {0:0.3f}%".format(acc1 * 100))
