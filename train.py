@@ -1,6 +1,7 @@
 import os
 import time
 import torch
+from tqdm import tqdm
 
 
 def train_one_epoch(epoch, vis, train_loader, model, optimizer, criterion, scheduler, opts):
@@ -9,16 +10,18 @@ def train_one_epoch(epoch, vis, train_loader, model, optimizer, criterion, sched
     model.train()
     tic = time.time()
 
-    for i, (images, labels) in enumerate(train_loader):
+    for i, data in enumerate(tqdm(train_loader)):
 
-        images = images.to(int(opts.gpu_ids[opts.rank]))
-        labels = labels.to(int(opts.gpu_ids[opts.rank]))
+        # ----------------- cuda -----------------
+        images = data[0].to(int(opts.gpu_ids[opts.rank]))
+        labels = data[1].to(int(opts.gpu_ids[opts.rank]))
 
+        # ----------------- forward -----------------
         outputs = model(images)
-        loss = criterion(outputs, labels)
 
         # ----------- update -----------
         optimizer.zero_grad()
+        loss = criterion(outputs, labels)
         loss.backward()
         optimizer.step()
 
@@ -42,7 +45,7 @@ def train_one_epoch(epoch, vis, train_loader, model, optimizer, criterion, sched
             vis.line(X=torch.ones((1, 1)) * i + epoch * len(train_loader),
                      Y=torch.Tensor([loss]).unsqueeze(0),
                      update='append',
-                     win='train_loss',
+                     win='train_loss_for_{}'.format(opts.name),
                      opts=dict(x_label='step',
                                y_label='loss',
                                title='train loss for {}'.format(opts.name),

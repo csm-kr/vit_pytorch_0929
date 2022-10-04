@@ -1,5 +1,6 @@
 import os
 import torch
+from tqdm import tqdm
 from utils import accuracy
 
 
@@ -50,13 +51,17 @@ def test_and_evaluate(epoch, vis, test_loader, model, criterion, opts, xl_log_sa
     loss_val, acc1_val, acc5_val, n = 0, 0, 0, 0
 
     with torch.no_grad():
-        for idx, data in enumerate(test_loader):
+        for idx, data in enumerate(tqdm(test_loader)):
+
+            # ----------------- cuda -----------------
             images = data[0].to(int(opts.gpu_ids[opts.rank]))
             labels = data[1].to(int(opts.gpu_ids[opts.rank]))
 
+            # ----------------- forward -----------------
             outputs = model(images)
-            loss = criterion(outputs, labels)
 
+            # ----------------- evaluate -----------------
+            loss = criterion(outputs, labels)
             n += images.size(0)
             acc = accuracy(outputs, labels, (1, 5))
             acc1 = acc[0]
@@ -75,13 +80,12 @@ def test_and_evaluate(epoch, vis, test_loader, model, criterion, opts, xl_log_sa
                 vis.line(X=torch.ones((1, 3)) * epoch,
                          Y=torch.Tensor([acc1, acc5, loss_val]).unsqueeze(0),
                          update='append',
-                         win='test_loss_and_acc',
+                         win='test_loss_and_acc_for_{}'.format(opts.name),
                          opts=dict(x_label='epoch',
                                    y_label='test loss and acc',
                                    title='test loss and accuracy for {}'.format(opts.name),
                                    legend=['acc1', 'acc5', 'test_loss']))
 
-            print("")
             print("top-1 percentage :  {0:0.3f}%".format(acc1 * 100))
             print("top-5 percentage :  {0:0.3f}%".format(acc5 * 100))
 
