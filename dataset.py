@@ -57,7 +57,7 @@ def build_dataloader(opts, is_return_mean_std=False):
             train_loader = DataLoader(train_set,
                                       num_workers=opts.num_workers,
                                       batch_sampler=RASampler(dataset_len=len(train_set), batch_size=opts.batch_size,
-                                                              repetitions=1, len_factor=3., shuffle=True, drop_last=True),
+                                                              repetitions=1, len_factor=3., shuffle=True, drop_last=False),
                                       pin_memory=True,
                                       )
         else:

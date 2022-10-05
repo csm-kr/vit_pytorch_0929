@@ -59,11 +59,11 @@ def test_and_evaluate(epoch, vis, test_loader, model, criterion, opts, xl_log_sa
             labels = data[1].to(int(opts.gpu_ids[opts.rank]))
 
             # ----------------- loss -----------------
-            if opts.is_vit_data_augmentation:
-                outputs, loss = get_cutmix_and_mixup_output_and_loss(images, labels, criterion, model, opts)
-            else:
-                outputs = model(images)
-                loss = criterion(outputs, labels)
+            # if opts.is_vit_data_augmentation:
+            #     outputs, loss = get_cutmix_and_mixup_output_and_loss(images, labels, criterion, model, opts)
+            # else:
+            outputs = model(images)
+            loss = criterion(outputs, labels)
 
             # ----------------- evaluate -----------------
             n += images.size(0)

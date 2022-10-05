@@ -1,5 +1,5 @@
 # train
-name = vit_aug
+name = vit_aug_re
 
 # data
 vit_data_augmentation_true

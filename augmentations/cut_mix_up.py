@@ -3,13 +3,11 @@ import numpy as np
 
 
 def get_cutmix_and_mixup_output_and_loss(images, target, criterion, model, opts):
-    output_ae = None
-    r = np.random.rand(1)
 
+    r = np.random.rand(1)
     # default mix_prob : 0.5
     mix_prob = 0.5
     if r < mix_prob:
-
         switching_prob = np.random.rand(1)
         # Cutmix
         if switching_prob < 0.5:
