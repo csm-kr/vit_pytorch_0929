@@ -2,6 +2,7 @@ import os
 import torch
 from tqdm import tqdm
 from utils import accuracy
+from augmentations.cut_mix_up import get_cutmix_and_mixup_output_and_loss
 
 
 def test_and_evaluate(epoch, vis, test_loader, model, criterion, opts, xl_log_saver=None, result_best=None, is_load=True):
@@ -57,11 +58,14 @@ def test_and_evaluate(epoch, vis, test_loader, model, criterion, opts, xl_log_sa
             images = data[0].to(int(opts.gpu_ids[opts.rank]))
             labels = data[1].to(int(opts.gpu_ids[opts.rank]))
 
-            # ----------------- forward -----------------
-            outputs = model(images)
+            # ----------------- loss -----------------
+            if opts.is_vit_data_augmentation:
+                outputs, loss = get_cutmix_and_mixup_output_and_loss(images, labels, criterion, model, opts)
+            else:
+                outputs = model(images)
+                loss = criterion(outputs, labels)
 
             # ----------------- evaluate -----------------
-            loss = criterion(outputs, labels)
             n += images.size(0)
             acc = accuracy(outputs, labels, (1, 5))
             acc1 = acc[0]

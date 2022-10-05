@@ -11,7 +11,8 @@ from models.vit import ViT
 
 
 def show_attention_map(epoch, model, batch_img, im, opts):
-    # load
+
+    # load check point
     f = os.path.join(opts.log_dir, opts.name, 'saves', opts.name + '.{}.pth.tar'.format(epoch))
     device = torch.device('cuda:{}'.format(opts.gpu_ids[opts.rank]))
 

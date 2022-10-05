@@ -1,0 +1,31 @@
+# train
+name = vit_aug
+
+# data
+vit_data_augmentation_true
+data_type = cifar10
+
+# visdom
+visdom_port = 8097
+
+# train
+batch_size = 128
+epoch = 100
+lr = 0.001
+rank = 0
+
+# model
+model_type = vit  # vit, lvit
+img_size=32
+patch_size=4
+in_chans=3
+embed_dim=192
+depth=12
+num_heads=12
+mlp_ratio=2.
+# is_cls_token
+
+# distributed
+rank = 0
+gpu_ids = [0]
+# gpu_ids = [0, 1, 2, 3]

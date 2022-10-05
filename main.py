@@ -7,8 +7,12 @@ import torch.nn as nn
 
 from dataset import build_dataloader
 from models.build import build_model
+from loss import build_loss
+
+from scheduler import CosineAnnealingWarmupRestarts
 from log import XLLogSaver
 from utils import resume
+
 from train import train_one_epoch
 from test import test_and_evaluate
 
@@ -32,15 +36,22 @@ def main_worker(rank, opts):
     model = model.to(device)
 
     # 6. ** criterion **
-    criterion = nn.CrossEntropyLoss()
+    criterion = build_loss(opts)
 
     # 7. ** optimizer **
-    optimizer = torch.optim.Adam(model.parameters(),
-                                 lr=opts.lr,
-                                 weight_decay=opts.weight_decay)
+    optimizer = torch.optim.AdamW(model.parameters(),
+                                  lr=opts.lr,
+                                  weight_decay=opts.weight_decay)
 
     # 8. ** scheduler **
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=opts.epoch, eta_min=1e-5)
+    scheduler = CosineAnnealingWarmupRestarts(
+        optimizer,
+        first_cycle_steps=opts.epoch,
+        cycle_mult=1.,
+        max_lr=opts.lr,
+        min_lr=5e-5,
+        warmup_steps=10
+        )
 
     # 9. ** logger **
     os.makedirs(opts.log_dir, exist_ok=True)

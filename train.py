@@ -2,6 +2,7 @@ import os
 import time
 import torch
 from tqdm import tqdm
+from augmentations.cut_mix_up import get_cutmix_and_mixup_output_and_loss
 
 
 def train_one_epoch(epoch, vis, train_loader, model, optimizer, criterion, scheduler, opts):
@@ -16,12 +17,15 @@ def train_one_epoch(epoch, vis, train_loader, model, optimizer, criterion, sched
         images = data[0].to(int(opts.gpu_ids[opts.rank]))
         labels = data[1].to(int(opts.gpu_ids[opts.rank]))
 
-        # ----------------- forward -----------------
-        outputs = model(images)
+        # ----------------- loss -----------------
+        if opts.is_vit_data_augmentation:
+            outputs, loss = get_cutmix_and_mixup_output_and_loss(images, labels, criterion, model, opts)
+        else:
+            outputs = model(images)
+            loss = criterion(outputs, labels)
 
-        # ----------- update -----------
+        # ----------------- update -----------------
         optimizer.zero_grad()
-        loss = criterion(outputs, labels)
         loss.backward()
         optimizer.step()
 

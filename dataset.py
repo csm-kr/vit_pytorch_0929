@@ -2,12 +2,17 @@ import torch
 import torchvision.transforms as tfs
 from torch.utils.data import DataLoader
 from torchvision.datasets import CIFAR10
+from augmentations.auto_aug import CIFAR10Policy, ImageNetPolicy
+from augmentations.random_erasing import RandomErasing
+from augmentations.sampler import RASampler
 
 
 def build_dataloader(opts, is_return_mean_std=False):
 
     train_loader = None
     test_loader = None
+    MEAN = None
+    STD = None
 
     if opts.data_type == 'cifar10':
         print('dataset : {}'.format(opts.data_type))
@@ -16,12 +21,23 @@ def build_dataloader(opts, is_return_mean_std=False):
         opts.input_size = 32
         opts.data_root = './CIFAR10'
         MEAN, STD = (0.4914, 0.4822, 0.4465), (0.2470, 0.2435, 0.2616)
-        transform_train = tfs.Compose([
-            tfs.RandomCrop(32, padding=4),
-            tfs.RandomHorizontalFlip(),
-            tfs.ToTensor(),
-            tfs.Normalize(mean=MEAN, std=STD),
-        ])
+
+        if opts.is_vit_data_augmentation:
+            transform_train = tfs.Compose([
+                tfs.RandomCrop(32, padding=4),
+                tfs.RandomHorizontalFlip(),
+                CIFAR10Policy(),
+                tfs.ToTensor(),
+                tfs.Normalize(mean=MEAN, std=STD),
+                RandomErasing(probability=0.25, sl=0.02, sh=0.4, r1=0.3, mean=MEAN)
+            ])
+        else:
+            transform_train = tfs.Compose([
+                tfs.RandomCrop(32, padding=4),
+                tfs.RandomHorizontalFlip(),
+                tfs.ToTensor(),
+                tfs.Normalize(mean=MEAN, std=STD),
+            ])
 
         transform_test = tfs.Compose([tfs.ToTensor(),
                                       tfs.Normalize(mean=MEAN,
@@ -37,13 +53,20 @@ def build_dataloader(opts, is_return_mean_std=False):
                            train=False,
                            download=True,
                            transform=transform_test)
-
-        train_loader = DataLoader(train_set,
-                                  batch_size=opts.batch_size,
-                                  shuffle=True,
-                                  num_workers=opts.num_workers,
-                                  pin_memory=True,
-                                  )
+        if opts.is_vit_data_augmentation:
+            train_loader = DataLoader(train_set,
+                                      num_workers=opts.num_workers,
+                                      batch_sampler=RASampler(dataset_len=len(train_set), batch_size=opts.batch_size,
+                                                              repetitions=1, len_factor=3., shuffle=True, drop_last=True),
+                                      pin_memory=True,
+                                      )
+        else:
+            train_loader = DataLoader(train_set,
+                                      batch_size=opts.batch_size,
+                                      shuffle=True,
+                                      num_workers=opts.num_workers,
+                                      pin_memory=True,
+                                      )
 
         test_loader = DataLoader(test_set,
                                  batch_size=opts.batch_size,
