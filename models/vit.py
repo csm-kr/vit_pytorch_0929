@@ -117,7 +117,7 @@ class Block(nn.Module):
 
 
 class ViT(nn.Module):
-    def __init__(self, img_size=32, patch_size=4, in_chans=3, num_classes=10, embed_dim=192, depth=12,
+    def __init__(self, img_size=32, patch_size=4, in_chans=3, num_classes=10, embed_dim=192, depth=9,
                  num_heads=12, mlp_ratio=2., qkv_bias=False, drop_rate=0., attn_drop_rate=0.):
         super().__init__()
         self.num_classes = num_classes

@@ -1,5 +1,5 @@
 # train
-name = vit_aug
+name = lvit_aug
 
 # data
 vit_data_augmentation_true
@@ -15,7 +15,7 @@ lr = 0.001
 rank = 0
 
 # model
-model_type = vit  # vit, lvit
+model_type = lvit  # vit, lvit
 img_size=32
 patch_size=4
 in_chans=3

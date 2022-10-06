@@ -1,8 +1,7 @@
 # train
-name = vit_aug
+name = lvit
 
 # data
-vit_data_augmentation_true
 data_type = cifar10
 
 # visdom
@@ -15,7 +14,7 @@ lr = 0.001
 rank = 0
 
 # model
-model_type = vit  # vit, lvit
+model_name = lvit
 img_size=32
 patch_size=4
 in_chans=3

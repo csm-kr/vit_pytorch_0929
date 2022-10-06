@@ -1,5 +1,5 @@
 # train
-name = vit_aug
+name = cvit_aug_1
 
 # data
 vit_data_augmentation_true
@@ -15,17 +15,20 @@ lr = 0.001
 rank = 0
 
 # model
-model_type = vit  # vit, lvit
-img_size=32
+model_type = cvit  # vit, lvit
+# img_size            - auto
 patch_size=4
 in_chans=3
+# num_classes         - auto
 embed_dim=192
 depth=12
 num_heads=12
 mlp_ratio=2.
-# is_cls_token
+# qkv_bias=False      - auto
+# drop_rate=0.        - auto
+# attn_drop_rate=0.   - auto
+has_cls_token_false
 
 # distributed
 rank = 0
-gpu_ids = [0]
-# gpu_ids = [0, 1, 2, 3]
+gpu_ids = [1]

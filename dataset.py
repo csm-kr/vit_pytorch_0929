@@ -18,7 +18,7 @@ def build_dataloader(opts, is_return_mean_std=False):
         print('dataset : {}'.format(opts.data_type))
 
         opts.num_classes = 10
-        opts.input_size = 32
+        opts.img_size = 32
         opts.data_root = './CIFAR10'
         MEAN, STD = (0.4914, 0.4822, 0.4465), (0.2470, 0.2435, 0.2616)
 

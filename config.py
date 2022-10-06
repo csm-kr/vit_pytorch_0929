@@ -25,6 +25,8 @@ def get_args_parser():
     parser.add_argument('--depth', type=int)
     parser.add_argument('--num_heads', type=int)
     parser.add_argument('--mlp_ratio', type=float)
+    parser.set_defaults(has_cls_token=True)
+    parser.add_argument('--has_cls_token_false', dest='has_cls_token', action='store_false')
 
     # # data augmentation
     parser.set_defaults(is_vit_data_augmentation=False)  # auto aug, random erasing, label smoothing, cutmix, mixup,

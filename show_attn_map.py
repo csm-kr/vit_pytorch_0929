@@ -73,6 +73,26 @@ def show_attention_map(epoch, model, batch_img, im, opts):
     _ = ax3.imshow(result)
     plt.show()
 
+    for i, v in enumerate(joint_attentions):
+        # Attention from the output token to the input space.
+        mask = v[0, 1:].reshape(8, 8).detach().numpy()
+        mask = cv2.resize(mask / mask.max(), (im.shape[1], im.shape[0]))[..., np.newaxis]
+        result = (mask * im)
+
+        fig, (ax1, ax2, ax3) = plt.subplots(ncols=3, figsize=(12, 12))
+        ax1.set_title('Original')
+        ax2.set_title('mask')
+        ax3.set_title('Attention Map_%d Layer' % (i + 1))
+
+        im = im.clip(0, 1)
+        mask = mask.clip(0, 1)
+        result = result.clip(0, 1)
+
+        _ = ax1.imshow(im)
+        _ = ax2.imshow(mask.squeeze())
+        _ = ax3.imshow(result)
+        plt.show()
+
     return 0
 
 
@@ -95,12 +115,13 @@ if __name__ == '__main__':
     # model
     model = build_model(opts).to(device)
 
-    for i in range(test_set.__len__()):
-        img, label = test_set.__getitem__(i)
-        batch_img = img.unsqueeze(0).to(device)  # [1, 3, 32, 32]
+    # for i in range(test_set.__len__()):
 
-        # tensor to img
-        img_vis = np.array(img.permute(1, 2, 0), np.float32)  # C, W, H
-        img_vis *= std
-        img_vis += mean
-        show_attention_map(epoch=41, model=model, batch_img=batch_img, im=img_vis, opts=opts)
+    img, label = test_set.__getitem__(0)
+    batch_img = img.unsqueeze(0).to(device)  # [1, 3, 32, 32]
+
+    # tensor to img
+    img_vis = np.array(img.permute(1, 2, 0), np.float32)  # C, W, H
+    img_vis *= std
+    img_vis += mean
+    show_attention_map(epoch='best', model=model, batch_img=batch_img, im=img_vis, opts=opts)

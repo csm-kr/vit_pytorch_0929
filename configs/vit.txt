@@ -9,7 +9,7 @@ visdom_port = 8097
 
 # train
 batch_size = 128
-epoch = 50
+epoch = 100
 lr = 0.001
 rank = 0
 
@@ -19,7 +19,7 @@ img_size=32
 patch_size=4
 in_chans=3
 embed_dim=192
-depth=12
+depth=9
 num_heads=12
 mlp_ratio=2.
 # is_cls_token

@@ -27,36 +27,6 @@ class EmbeddingLayer(nn.Module):
         z = z + self.pos_embed
         return z
 
-
-class MSA(nn.Module):
-    def __init__(self, dim=192, num_heads=12, qkv_bias=False, attn_drop=0., proj_drop=0.):
-        super().__init__()
-        assert dim % num_heads == 0, 'dim should be divisible by num_heads'
-        self.num_heads = num_heads
-        head_dim = dim // num_heads
-        self.scale = head_dim ** -0.5
-
-        self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
-        self.attn_drop = nn.Dropout(attn_drop)
-        self.proj = nn.Linear(dim, dim)
-        self.proj_drop = nn.Dropout(proj_drop)
-
-    def forward(self, x):
-        B, N, C = x.shape
-        qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
-        q, k, v = qkv.unbind(0)
-
-        attn = (q @ k.transpose(-2, -1)) * self.scale
-
-        attn = attn.softmax(dim=-1)
-        attn = self.attn_drop(attn)
-
-        x = (attn @ v).transpose(1, 2).reshape(B, N, C)
-        x = self.proj(x)
-        x = self.proj_drop(x)
-        return x
-
-
 class MLP(nn.Module):
     def __init__(self, in_features, hidden_features, act_layer=nn.GELU, bias=True, drop=0.):
         super().__init__()
@@ -122,6 +92,8 @@ class LMSA(nn.Module):
 
         x = self.proj(x)
         x = self.proj_drop(x)
+        if B == 1:
+            return x, attn
         return x
 
 
@@ -137,8 +109,21 @@ class Block(nn.Module):
         self.mlp = MLP(in_features=dim, hidden_features=int(dim * mlp_ratio), act_layer=act_layer, drop=drop)
 
     def forward(self, x):
-        x = x + self.attn(self.norm1(x))
-        x = x + self.mlp(self.norm2(x))
+        if isinstance(x, tuple):
+            attn_list = x[1]
+            x = x[0]
+        else:
+            attn_list = []
+        if x.size(0) == 1:  # iif batch is 1, put attentions in attn_list
+            x_, attn = self.attn(self.norm1(x))
+            x = x + x_
+            x = x + self.mlp(self.norm2(x))
+            attn_list.append(attn)
+            return x, attn_list
+        else:
+            x_ = self.attn(self.norm1(x))
+            x = x + x_
+            x = x + self.mlp(self.norm2(x))
         return x
 
 
@@ -164,9 +149,36 @@ class LViT(nn.Module):
         # Classifier head(s)
         self.head = nn.Linear(self.num_features, num_classes) if num_classes > 0 else nn.Identity()
 
-    def forward(self, x):
+    def forward(self, x, get_attn_map=False):
         x = self.patch_embed(x)
         x = self.blocks(x)
+
+        if get_attn_map:
+            assert get_attn_map and x[0].size(0) == 1, 'batch is only one for attn map'
+            attn_list = x[1]  # 9, 1, 12, 64, 64 - [depth, batch, head, 64, 64]
+            attn_tensor = torch.stack(attn_list).squeeze(1)  # batch 제거 - [d, h, l, l]
+            attn_tensor = attn_tensor.mean(dim=1)  # head 제거 - [d, l, l]
+            x = x[0]
+
+        if x[0].size(0) == 1:
+            x = x[0]
+
         x = self.norm(x)
         x = self.head(x).mean(dim=-1)
+
+        if get_attn_map:
+            return x, attn_tensor
         return x
+
+
+if __name__ == '__main__':
+    img = torch.randn([2, 3, 32, 32])
+    lvit = LViT(img_size=32, )
+    x = lvit(img)
+    print(x.size())
+
+    img = torch.randn([1, 3, 32, 32])
+    x, att = lvit(img, True)
+    print(x.size())
+    print(att.size())
+
