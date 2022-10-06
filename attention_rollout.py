@@ -97,7 +97,10 @@ if __name__ == '__main__':
         attn = attention_getter.attentions
         reuslts = rollout(attn)
 
-        # # head의 갯수만큼 plt
+        # head의 갯수
+        num_heads = reuslts.size(1)
+
+        # head의 갯수만큼 plt
         v = reuslts[-1]  # 마지막 layer의 heads들 [12, 65, 65]
 
         basis_class_token = 0   # if 0 cls token,
@@ -142,8 +145,8 @@ if __name__ == '__main__':
         masks = masks.clip(0, 1)
         result = result.clip(0, 1)
 
-        fig, axs = plt.subplots(10, 3, figsize=(3, 24))
-        for i in range(9):
+        fig, axs = plt.subplots(num_heads + 1, 3, figsize=(3, 24))
+        for i in range(num_heads):
             for j in range(3):
                 # axs[i, j].set_title('head_{}'.format(i+1))
                 axs[i, j].get_xaxis().set_visible(False)
@@ -155,15 +158,15 @@ if __name__ == '__main__':
                 elif j == 2:
                     axs[i, j].imshow(result[i, :, :, :])
 
-        axs[9, 0].get_xaxis().set_visible(False)
-        axs[9, 0].get_yaxis().set_visible(False)
-        axs[9, 1].get_xaxis().set_visible(False)
-        axs[9, 1].get_yaxis().set_visible(False)
-        axs[9, 2].get_xaxis().set_visible(False)
-        axs[9, 2].get_yaxis().set_visible(False)
+        axs[num_heads, 0].get_xaxis().set_visible(False)
+        axs[num_heads, 0].get_yaxis().set_visible(False)
+        axs[num_heads, 1].get_xaxis().set_visible(False)
+        axs[num_heads, 1].get_yaxis().set_visible(False)
+        axs[num_heads, 2].get_xaxis().set_visible(False)
+        axs[num_heads, 2].get_yaxis().set_visible(False)
 
         # last row mean
-        axs[9, 0].imshow(im)
-        axs[9, 1].imshow(_mask.squeeze())
-        axs[9, 2].imshow(_result)
+        axs[num_heads, 0].imshow(im)
+        axs[num_heads, 1].imshow(_mask.squeeze())
+        axs[num_heads, 2].imshow(_result)
         plt.show()
