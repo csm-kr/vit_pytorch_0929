@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import torch
+import math
 import cv2
 
 
@@ -45,6 +46,88 @@ def rollout(attentions, head_fusion='mean', discard_ratio=0.9):
             # print(indices)
 
 
+def show_attentions(img, results, num_layers=1, has_cls_token=True, show_all_heads=True):
+
+    num_heads = results.size(1)
+    v = results[num_layers]  # [12, 65, 65]
+
+    # set grid size
+    grid_size = int(math.sqrt(v.size(-1)))
+    if has_cls_token:
+        idx_cls_token = 0
+        grid_size = int(math.sqrt(v.size(-1) - 1))
+
+    # ============================= for one mean img =============================
+    if not show_all_heads:
+        v_means = v.mean(0)  # 모든 헤드들을 다 평균 낸다면 v_ = v[0]
+
+        if has_cls_token:
+            mask = v_means[idx_cls_token, 1:].reshape(grid_size, grid_size).detach().numpy()
+        else:
+            mask = v_means.mean(0).reshape(grid_size, grid_size).detach().numpy()
+
+        mask = cv2.resize(mask / mask.max(), (im.shape[1], im.shape[0]))[..., np.newaxis]
+        result = (mask * img)
+
+        one_img = img.clip(0, 1)
+        one_mask = mask.clip(0, 1)
+        one_result = result.clip(0, 1)
+
+        fig, (ax1, ax2, ax3) = plt.subplots(ncols=3, figsize=(12, 12))
+
+        ax1.set_title('Original')
+        ax2.set_title('Attention Mask')
+        ax3.set_title('Attention Map')
+        _ = ax1.imshow(one_img)
+        _ = ax2.imshow(one_mask.squeeze())
+        _ = ax3.imshow(one_result)
+        plt.show()
+
+    else:
+
+        # ============================= for all head imgs =============================
+        masks_ = []
+        result_ = []
+
+        if has_cls_token:
+            masks = v[:, idx_cls_token, 1:].reshape(results.size(1), grid_size, grid_size).detach().numpy()
+        else:
+            masks = v.mean(1).reshape(results.size(1), grid_size, grid_size).detach().numpy()
+
+        for mask in masks:
+            m = cv2.resize(mask / mask.max(), (im.shape[1], im.shape[0]))[..., np.newaxis]
+            masks_.append(m.squeeze())
+            result_.append(m * im)
+
+        masks = np.stack(masks_)
+        result = np.stack(result_)
+
+        img = img.clip(0, 1)
+        masks = masks.clip(0, 1)
+        results = result.clip(0, 1)
+
+        fig, axs = plt.subplots(3, num_heads + 1, figsize=(24, 6))
+        for i in range(num_heads):
+            for j in range(3):
+                # axs[i, j].set_title('head_{}'.format(i+1))
+                axs[j, i].get_xaxis().set_visible(False)
+                axs[j, i].get_yaxis().set_visible(False)
+                if j == 0:
+                    axs[j, i].imshow(img)
+                elif j == 1:
+                    axs[j, i].imshow(masks[i, :, ])
+                elif j == 2:
+                    axs[j, i].imshow(results[i, :, :, :])
+        for i in range(3):
+            axs[i, num_heads].get_xaxis().set_visible(False)
+            axs[i, num_heads].get_yaxis().set_visible(False)
+
+        axs[0, num_heads].imshow(img)
+        axs[1, num_heads].imshow(masks.mean(0).clip(0, 1))       # the axis of heads [12, 32, 32]    -> [32, 32]
+        axs[2, num_heads].imshow(results.mean(0).clip(0, 1))     # the axis of heads [12, 32, 32, 3] -> [32, 32, 3]
+        plt.show()
+
+
 if __name__ == '__main__':
     import os
     import numpy as np
@@ -75,6 +158,7 @@ if __name__ == '__main__':
 
         # model
         model = build_model(opts).to(device)
+
         # load check point
         f = os.path.join(opts.log_dir, opts.name, 'saves', opts.name + '.{}.pth.tar'.format('best'))
         device = torch.device('cuda:{}'.format(opts.gpu_ids[opts.rank]))
@@ -90,102 +174,13 @@ if __name__ == '__main__':
             # state_dict = {k.replace('module.', ''): v for (k, v) in state_dict.items()}
             model.load_state_dict(state_dict)
         print('load pth {}'.format('best'))
+
         # attention getter
         attention_getter = AttentionGetter(model)
 
         x = model(batch_img)
         attn = attention_getter.attentions
-        reuslts = rollout(attn)
+        results = rollout(attn)    # [layers, heads, token, token]
+        show_attentions(im, results, -1, has_cls_token=False, show_all_heads=True)
 
-        # head의 갯수
-        num_heads = reuslts.size(1)
 
-        # head의 갯수만큼 plt
-        v = reuslts[-1]  # 마지막 layer의 heads들 [12, 65, 65]
-
-        basis_class_token = 0   # if 0 cls token,
-
-        # ============================= for one mean img =============================
-        v_ = v.mean(0)
-        # v_ = v[0]
-        grid_size = 8
-
-        mask = v_[basis_class_token, 1:].reshape(grid_size, grid_size).detach().numpy()
-        mask = cv2.resize(mask / mask.max(), (im.shape[1], im.shape[0]))[..., np.newaxis]
-        result = (mask * im)
-
-        im = im.clip(0, 1)
-        _mask = mask.clip(0, 1)
-        _result = result.clip(0, 1)
-        #
-        # fig, (ax1, ax2, ax3) = plt.subplots(ncols=3, figsize=(12, 12))
-        #
-        # ax1.set_title('Original')
-        # ax2.set_title('Attention Mask')
-        # ax3.set_title('Attention Map')
-        # _ = ax1.imshow(im)
-        # _ = ax2.imshow(mask.squeeze())
-        # _ = ax3.imshow(result)
-        # # plt.show()
-
-        # ============================= for all head imgs =============================
-        masks_ = []
-        result_ = []
-        grid_size = 8
-        masks = v[:, basis_class_token, 1:].reshape(reuslts.size(1), grid_size, grid_size).detach().numpy()
-        for mask in masks:
-            m = cv2.resize(mask / mask.max(), (im.shape[1], im.shape[0]))[..., np.newaxis]
-            masks_.append(m.squeeze())
-            result_.append(m * im)
-
-        masks = np.stack(masks_)
-        result = np.stack(result_)
-
-        im = im.clip(0, 1)
-        masks = masks.clip(0, 1)
-        result = result.clip(0, 1)
-
-        # fig, axs = plt.subplots(num_heads + 1, 3, figsize=(3, 24))
-        # for i in range(num_heads):
-        #     for j in range(3):
-        #         # axs[i, j].set_title('head_{}'.format(i+1))
-        #         axs[i, j].get_xaxis().set_visible(False)
-        #         axs[i, j].get_yaxis().set_visible(False)
-        #         if j == 0:
-        #             axs[i, j].imshow(im)
-        #         elif j == 1:
-        #             axs[i, j].imshow(masks[i, :, ])
-        #         elif j == 2:
-        #             axs[i, j].imshow(result[i, :, :, :])
-        # axs[num_heads, 0].get_xaxis().set_visible(False)
-        # axs[num_heads, 0].get_yaxis().set_visible(False)
-        # axs[num_heads, 1].get_xaxis().set_visible(False)
-        # axs[num_heads, 1].get_yaxis().set_visible(False)
-        # axs[num_heads, 2].get_xaxis().set_visible(False)
-        # axs[num_heads, 2].get_yaxis().set_visible(False)
-        #
-        # # last row mean
-        # axs[num_heads, 0].imshow(im)
-        # axs[num_heads, 1].imshow(_mask.squeeze())
-        # axs[num_heads, 2].imshow(_result)
-        # plt.show()
-
-        fig, axs = plt.subplots(3, num_heads + 1, figsize=(24, 6))
-        for i in range(num_heads):
-            for j in range(3):
-                # axs[i, j].set_title('head_{}'.format(i+1))
-                axs[j, i].get_xaxis().set_visible(False)
-                axs[j, i].get_yaxis().set_visible(False)
-                if j == 0:
-                    axs[j, i].imshow(im)
-                elif j == 1:
-                    axs[j, i].imshow(masks[i, :, ])
-                elif j == 2:
-                    axs[j, i].imshow(result[i, :, :, :])
-        for i in range(3):
-            axs[i, num_heads].get_xaxis().set_visible(False)
-            axs[i, num_heads].get_yaxis().set_visible(False)
-        axs[0, num_heads].imshow(im)
-        axs[1, num_heads].imshow(_mask.squeeze())
-        axs[2, num_heads].imshow(_result)
-        plt.show()
