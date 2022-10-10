@@ -145,28 +145,47 @@ if __name__ == '__main__':
         masks = masks.clip(0, 1)
         result = result.clip(0, 1)
 
-        fig, axs = plt.subplots(num_heads + 1, 3, figsize=(3, 24))
+        # fig, axs = plt.subplots(num_heads + 1, 3, figsize=(3, 24))
+        # for i in range(num_heads):
+        #     for j in range(3):
+        #         # axs[i, j].set_title('head_{}'.format(i+1))
+        #         axs[i, j].get_xaxis().set_visible(False)
+        #         axs[i, j].get_yaxis().set_visible(False)
+        #         if j == 0:
+        #             axs[i, j].imshow(im)
+        #         elif j == 1:
+        #             axs[i, j].imshow(masks[i, :, ])
+        #         elif j == 2:
+        #             axs[i, j].imshow(result[i, :, :, :])
+        # axs[num_heads, 0].get_xaxis().set_visible(False)
+        # axs[num_heads, 0].get_yaxis().set_visible(False)
+        # axs[num_heads, 1].get_xaxis().set_visible(False)
+        # axs[num_heads, 1].get_yaxis().set_visible(False)
+        # axs[num_heads, 2].get_xaxis().set_visible(False)
+        # axs[num_heads, 2].get_yaxis().set_visible(False)
+        #
+        # # last row mean
+        # axs[num_heads, 0].imshow(im)
+        # axs[num_heads, 1].imshow(_mask.squeeze())
+        # axs[num_heads, 2].imshow(_result)
+        # plt.show()
+
+        fig, axs = plt.subplots(3, num_heads + 1, figsize=(24, 6))
         for i in range(num_heads):
             for j in range(3):
                 # axs[i, j].set_title('head_{}'.format(i+1))
-                axs[i, j].get_xaxis().set_visible(False)
-                axs[i, j].get_yaxis().set_visible(False)
+                axs[j, i].get_xaxis().set_visible(False)
+                axs[j, i].get_yaxis().set_visible(False)
                 if j == 0:
-                    axs[i, j].imshow(im)
+                    axs[j, i].imshow(im)
                 elif j == 1:
-                    axs[i, j].imshow(masks[i, :, ])
+                    axs[j, i].imshow(masks[i, :, ])
                 elif j == 2:
-                    axs[i, j].imshow(result[i, :, :, :])
-
-        axs[num_heads, 0].get_xaxis().set_visible(False)
-        axs[num_heads, 0].get_yaxis().set_visible(False)
-        axs[num_heads, 1].get_xaxis().set_visible(False)
-        axs[num_heads, 1].get_yaxis().set_visible(False)
-        axs[num_heads, 2].get_xaxis().set_visible(False)
-        axs[num_heads, 2].get_yaxis().set_visible(False)
-
-        # last row mean
-        axs[num_heads, 0].imshow(im)
-        axs[num_heads, 1].imshow(_mask.squeeze())
-        axs[num_heads, 2].imshow(_result)
+                    axs[j, i].imshow(result[i, :, :, :])
+        for i in range(3):
+            axs[i, num_heads].get_xaxis().set_visible(False)
+            axs[i, num_heads].get_yaxis().set_visible(False)
+        axs[0, num_heads].imshow(im)
+        axs[1, num_heads].imshow(_mask.squeeze())
+        axs[2, num_heads].imshow(_result)
         plt.show()
