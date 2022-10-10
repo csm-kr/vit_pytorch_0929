@@ -50,7 +50,7 @@ def main_worker(rank, opts):
         cycle_mult=1.,
         max_lr=opts.lr,
         min_lr=5e-5,
-        warmup_steps=10
+        warmup_steps=opts.warmup
         )
 
     # 9. ** logger **
