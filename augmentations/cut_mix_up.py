@@ -49,8 +49,8 @@ def rand_bbox(size, lam):
 def mixup_data(x, y, opts):
     '''Returns mixed inputs, pairs of targets, and lambda'''
     if opts.mixup_beta > 0:
-        # lam = np.random.beta(opts.mixup_beta, opts.mixup_beta)
-        lam = np.random.beta(0.8, 0.8)
+        lam = np.random.beta(opts.mixup_beta, opts.mixup_beta)
+        # lam = np.random.beta(0.8, 0.8)
     else:
         lam = 1
 
@@ -66,8 +66,8 @@ def mixup_data(x, y, opts):
 def cutmix_data(x, y, opts):
     '''Returns mixed inputs, pairs of targets, and lambda'''
     if opts.cutmix_alpha > 0:
-        # lam = np.random.beta(opts.cutmix_alpha, opts.cutmix_alpha)
-        lam = np.random.beta(1.0, 1.0)
+        lam = np.random.beta(opts.cutmix_alpha, opts.cutmix_alpha)
+        # lam = np.random.beta(1.0, 1.0)
     else:
         lam = 1
 
