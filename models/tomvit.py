@@ -48,8 +48,10 @@ class EmbeddingLayer(nn.Module):
             self.pos_embed = nn.Parameter(torch.zeros(1, self.num_tokens, self.embed_dim))
             trunc_normal_(self.pos_embed, std=.02)
         else:
-            self.pos_embed = positionalencoding2d(self.embed_dim, int(math.sqrt(self.num_tokens)),
-                                                  int(math.sqrt(self.num_tokens))).unsqueeze(0)
+            self.register_buffer('pos_embed', positionalencoding2d(self.embed_dim,
+                                                                   int(math.sqrt(self.num_tokens)),
+                                                                   int(math.sqrt(self.num_tokens))).unsqueeze(0))
+
 
     def forward(self, x):
         B, C, H, W = x.shape
