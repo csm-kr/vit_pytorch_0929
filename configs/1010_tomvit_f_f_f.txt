@@ -1,0 +1,30 @@
+# train
+name = 1010_tomvit_f_f_f
+
+# data
+vit_data_augmentation_true
+data_type = cifar10
+
+# model
+model_type = tomvit
+img_size=32
+patch_size=4
+in_chans=3
+embed_dim=192
+depth=9
+num_heads=12
+mlp_ratio=2.
+has_cls_token_false
+has_last_norm_false
+has_basic_poe_false
+
+# train
+lr = 0.001
+epoch = 100
+warmup = 10
+batch_size = 128
+
+# distributed
+rank = 0
+gpu_ids = [0]
+# gpu_ids = [0, 1, 2, 3]

@@ -36,6 +36,8 @@ def get_args_parser():
     parser.add_argument('--has_cls_token_false', dest='has_cls_token', action='store_false')
     parser.set_defaults(has_last_norm=True)
     parser.add_argument('--has_last_norm_false', dest='has_last_norm', action='store_false')
+    parser.set_defaults(has_basic_poe=True)
+    parser.add_argument('--has_basic_poe_false', dest='has_basic_poe', action='store_false', help='if not, sinusoid 2d')
 
     # train & optimizer
     parser.add_argument('--lr', type=float, default=0.001)

@@ -1,13 +1,38 @@
 # tomvit - toward more visionary transformer
-
+import math
 import torch
 import torch.nn as nn
 from torchsummary import summary
 from timm.models.layers import trunc_normal_
 
 
+def positionalencoding2d(d_model, height, width):
+    """
+    :param d_model: dimension of the model
+    :param height: height of the positions
+    :param width: width of the positions
+    :return: d_model*height*width position matrix
+    """
+    if d_model % 4 != 0:
+        raise ValueError("Cannot use sin/cos positional encoding with "
+                         "odd dimension (got dim={:d})".format(d_model))
+    pe = torch.zeros(d_model, height, width)
+    # Each dimension use half of d_model
+    d_model = int(d_model / 2)
+    div_term = torch.exp(torch.arange(0., d_model, 2) *
+                         -(math.log(10000.0) / d_model))
+    pos_w = torch.arange(0., width).unsqueeze(1)
+    pos_h = torch.arange(0., height).unsqueeze(1)
+    pe[0:d_model:2, :, :] = torch.sin(pos_w * div_term).transpose(0, 1).unsqueeze(1).repeat(1, height, 1)
+    pe[1:d_model:2, :, :] = torch.cos(pos_w * div_term).transpose(0, 1).unsqueeze(1).repeat(1, height, 1)
+    pe[d_model::2, :, :] = torch.sin(pos_h * div_term).transpose(0, 1).unsqueeze(2).repeat(1, 1, width)
+    pe[d_model + 1::2, :, :] = torch.cos(pos_h * div_term).transpose(0, 1).unsqueeze(2).repeat(1, 1, width)
+    pe = pe.view(d_model * 2, width * height).permute(1, 0)
+    return pe
+
+
 class EmbeddingLayer(nn.Module):
-    def __init__(self, in_chans, embed_dim, img_size, patch_size, has_cls_token):
+    def __init__(self, in_chans, embed_dim, img_size, patch_size, has_cls_token, has_basic_poe):
         super().__init__()
 
         self.num_tokens = (img_size // patch_size) ** 2
@@ -19,8 +44,12 @@ class EmbeddingLayer(nn.Module):
             self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
             nn.init.normal_(self.cls_token, std=1e-6)
             self.num_tokens += 1
-        self.pos_embed = nn.Parameter(torch.zeros(1, self.num_tokens, self.embed_dim))
-        trunc_normal_(self.pos_embed, std=.02)
+        if has_basic_poe:
+            self.pos_embed = nn.Parameter(torch.zeros(1, self.num_tokens, self.embed_dim))
+            trunc_normal_(self.pos_embed, std=.02)
+        else:
+            self.pos_embed = positionalencoding2d(self.embed_dim, int(math.sqrt(self.num_patches)),
+                                                  int(math.sqrt(self.num_patches))).unsqueeze(0)
 
     def forward(self, x):
         B, C, H, W = x.shape
@@ -106,20 +135,21 @@ class Block(nn.Module):
 class TomViT(nn.Module):
     def __init__(self, img_size=32, patch_size=4, in_chans=3, num_classes=10, embed_dim=192, depth=9,
                  num_heads=12, mlp_ratio=2., qkv_bias=False, drop_rate=0., attn_drop_rate=0., has_cls_token=True,
-                 has_last_norm=True,
+                 has_last_norm=True, has_basic_poe=True,
                  ):
         super().__init__()
 
-        # cls toekn
+        # tomvit elements
         self.has_cls_token = has_cls_token
         self.has_last_norm = has_last_norm
+        self.has_basic_poe = has_basic_poe
 
         self.num_classes = num_classes
         self.num_features = self.embed_dim = embed_dim  # num_features for consistency with other models
         norm_layer = nn.LayerNorm
         act_layer = nn.GELU
 
-        self.patch_embed = EmbeddingLayer(in_chans, embed_dim, img_size, patch_size, has_cls_token)
+        self.patch_embed = EmbeddingLayer(in_chans, embed_dim, img_size, patch_size, has_cls_token, has_basic_poe)
         self.blocks = nn.Sequential(*[
             Block(
                 dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, drop=drop_rate,
@@ -132,12 +162,6 @@ class TomViT(nn.Module):
 
         # Classifier head(s)
         self.head = nn.Linear(self.num_features, num_classes) if num_classes > 0 else nn.Identity()
-
-    #     # count params
-    #     print("num_params : ", self.count_parameters())
-    #
-    # def count_parameters(self):
-    #     return sum(p.numel() for p in self.parameters() if p.requires_grad)
 
     def forward(self, x):
         x = self.patch_embed(x)
