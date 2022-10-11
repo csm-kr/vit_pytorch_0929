@@ -1,12 +1,12 @@
 # train
-name = 1010_vit
+name = 1011_tomvit_t_f_t
 
 # data
 vit_data_augmentation_true
 data_type = cifar10
 
 # model
-model_type = vit
+model_type = tomvit
 img_size=32
 patch_size=4
 in_chans=3
@@ -14,6 +14,7 @@ embed_dim=192
 depth=9
 num_heads=12
 mlp_ratio=2.
+has_last_norm_false
 
 # train
 lr = 0.001

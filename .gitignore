@@ -1,6 +1,6 @@
 # data
 data/
-CIFAR10/
+data/CIFAR10/
 CIFAR100/
 
 # vscode setting

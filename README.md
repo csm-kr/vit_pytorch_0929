@@ -38,6 +38,15 @@ The goal of this repo is to find the analysis of various components of ViT (e.g.
 | model               | Batch size     | resolution | Top1-Acc          | Top5-Acc | Val Loss    | Params  |
 |---------------------|----------------|------------|-------------------|----------|-------------|---------|
 | ViT(vaswani)        | 128            | 32 x 32    | 0.9379            | -        | 0.6579      | 2692426 | 
+| ViT(sinusoid2d)     | 128            | 32 x 32    | 0.9474            | -        | 0.6325      | 2692426 | 
+| ViT(+ae)            | 128            | 32 x 32    | 0.9515            | -        | 0.6325      | 2692426 | 
+
+```
+--config ./configs/cifar10/1009_tomvit_t_t_t.txt
+--config ./configs/cifar10/1011_tomvit_f_t_f.txt
+--config ./configs/cifar10/1010_tomvit_f_f_f.txt
+--config ./configs/cifar10/1011_tomvit_f_f_f_t.txt
+```
 
 ##### CIFAR100
 
