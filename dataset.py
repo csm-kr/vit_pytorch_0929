@@ -1,7 +1,7 @@
 import torch
 import torchvision.transforms as tfs
 from torch.utils.data import DataLoader
-from torchvision.datasets import CIFAR10
+from torchvision.datasets import CIFAR10, CIFAR100
 from augmentations.auto_aug import CIFAR10Policy, ImageNetPolicy
 from augmentations.random_erasing import RandomErasing
 from augmentations.sampler import RASampler
@@ -58,6 +58,71 @@ def build_dataloader(opts, is_return_mean_std=False):
                                       num_workers=opts.num_workers,
                                       batch_sampler=RASampler(dataset_len=len(train_set), batch_size=opts.batch_size,
                                                               repetitions=1, len_factor=3., shuffle=True, drop_last=False),
+                                      pin_memory=True,
+                                      )
+        else:
+            train_loader = DataLoader(train_set,
+                                      batch_size=opts.batch_size,
+                                      shuffle=True,
+                                      num_workers=opts.num_workers,
+                                      pin_memory=True,
+                                      )
+
+        test_loader = DataLoader(test_set,
+                                 batch_size=opts.batch_size,
+                                 shuffle=False,
+                                 num_workers=opts.num_workers,
+                                 pin_memory=True,
+                                 )
+
+    if is_return_mean_std:
+        return train_loader, test_loader, MEAN, STD
+
+    elif opts.data_type == 'cifar100':
+        print('dataset : {}'.format(opts.data_type))
+
+        opts.num_classes = 100
+        opts.img_size = 32
+        opts.data_root = './data/CIFAR100'
+        MEAN, STD = (0.5071, 0.4867, 0.4408), (0.2673, 0.2564, 0.2762)
+
+        if opts.is_vit_data_augmentation:
+            transform_train = tfs.Compose([
+                tfs.RandomCrop(32, padding=4),
+                tfs.RandomHorizontalFlip(),
+                CIFAR10Policy(),
+                tfs.ToTensor(),
+                tfs.Normalize(mean=MEAN, std=STD),
+                RandomErasing(probability=0.25, sl=0.02, sh=0.4, r1=0.3, mean=MEAN)
+            ])
+        else:
+            transform_train = tfs.Compose([
+                tfs.RandomCrop(32, padding=4),
+                tfs.RandomHorizontalFlip(),
+                tfs.ToTensor(),
+                tfs.Normalize(mean=MEAN, std=STD),
+            ])
+
+        transform_test = tfs.Compose([tfs.ToTensor(),
+                                      tfs.Normalize(mean=MEAN,
+                                                    std=STD),
+                                      ])
+
+        train_set = CIFAR100(root=opts.data_root,
+                             train=True,
+                             download=True,
+                             transform=transform_train)
+
+        test_set = CIFAR100(root=opts.data_root,
+                            train=False,
+                            download=True,
+                            transform=transform_test)
+        if opts.is_vit_data_augmentation:
+            train_loader = DataLoader(train_set,
+                                      num_workers=opts.num_workers,
+                                      batch_sampler=RASampler(dataset_len=len(train_set), batch_size=opts.batch_size,
+                                                              repetitions=1, len_factor=3., shuffle=True,
+                                                              drop_last=False),
                                       pin_memory=True,
                                       )
         else:

@@ -8,9 +8,9 @@ The goal of this repo is to find the analysis of various components of ViT (e.g.
 - batch : 128
 - lr : 1e-3
 - epoch : 50
-- optimizer : adam
+- optimizer : adamw
 - betas : (0.9, 0.999)
-- weight_decay : 5e-5
+- weight_decay : 5e-2
 - lr scheduler : cosine scheduler
 - loss : cross entropy
 - model : Vit 
@@ -42,9 +42,10 @@ The goal of this repo is to find the analysis of various components of ViT (e.g.
 | ViT(+ae)            | 128            | 32 x 32    | 0.9515            | -        | 0.6325      | 2692426 | 
 
 ```
---config ./configs/cifar10/1009_tomvit_t_t_t.txt
+--config ./configs/cifar10/1011_tomvit_t_t_t.txt
 --config ./configs/cifar10/1011_tomvit_f_t_f.txt
---config ./configs/cifar10/1010_tomvit_f_f_f.txt
+...
+--config ./configs/cifar10/1011_tomvit_f_f_f.txt
 --config ./configs/cifar10/1011_tomvit_f_f_f_t.txt
 ```
 

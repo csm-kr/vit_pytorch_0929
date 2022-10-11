@@ -1,7 +1,7 @@
 # data
 data/
 data/CIFAR10/
-CIFAR100/
+data/CIFAR100/
 
 # vscode setting
 .vscode
