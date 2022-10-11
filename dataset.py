@@ -19,7 +19,7 @@ def build_dataloader(opts, is_return_mean_std=False):
 
         opts.num_classes = 10
         opts.img_size = 32
-        opts.data_root = './CIFAR10'
+        opts.data_root = './data/CIFAR10'
         MEAN, STD = (0.4914, 0.4822, 0.4465), (0.2470, 0.2435, 0.2616)
 
         if opts.is_vit_data_augmentation:

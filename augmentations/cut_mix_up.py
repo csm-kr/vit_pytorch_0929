@@ -1,6 +1,6 @@
 import torch
 import numpy as np
-
+import torch.nn.functional as F
 
 def get_cutmix_and_mixup_output_and_loss(images, target, criterion, model, opts):
 
@@ -13,16 +13,31 @@ def get_cutmix_and_mixup_output_and_loss(images, target, criterion, model, opts)
         if switching_prob < 0.5:
             slicing_idx, y_a, y_b, lam, sliced = cutmix_data(images, target, opts)
             images[:, :, slicing_idx[0]:slicing_idx[2], slicing_idx[1]:slicing_idx[3]] = sliced
-            output = model(images)
-            loss = mixup_criterion(criterion, output, y_a, y_b, lam)
+            if opts.has_auto_encoder:
+                output, x_ = model(images)
+                loss = mixup_criterion(criterion, output, y_a, y_b, lam)
+                loss += F.mse_loss(x_, images)
+            else:
+                output = model(images)
+                loss = mixup_criterion(criterion, output, y_a, y_b, lam)
         # Mixup
         else:
             images, y_a, y_b, lam = mixup_data(images, target, opts)
-            output = model(images)
-            loss = mixup_criterion(criterion, output, y_a, y_b, lam)
+            if opts.has_auto_encoder:
+                output, x_ = model(images)
+                loss = mixup_criterion(criterion, output, y_a, y_b, lam)
+                loss += F.mse_loss(x_, images)
+            else:
+                output = model(images)
+                loss = mixup_criterion(criterion, output, y_a, y_b, lam)
     else:
-        output = model(images)
-        loss = criterion(output, target)
+        if opts.has_auto_encoder:
+            output, x_ = model(images)
+            loss = criterion(output, target)
+            loss += F.mse_loss(x_, images)
+        else:
+            output = model(images)
+            loss = criterion(output, target)
 
     return output, loss
 

@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 from torchsummary import summary
 from timm.models.layers import trunc_normal_
+from models.ae import AutoEncoder
 
 
 def positionalencoding2d(d_model, height, width):
@@ -51,7 +52,9 @@ class EmbeddingLayer(nn.Module):
             self.register_buffer('pos_embed', positionalencoding2d(self.embed_dim,
                                                                    int(math.sqrt(self.num_tokens)),
                                                                    int(math.sqrt(self.num_tokens))).unsqueeze(0))
-
+            if has_cls_token:
+                self.pos_embed = torch.cat([torch.zeros_like(self.cls_token), self.pos_embed], dim=1)
+                # ([1, 1, 192] + [1, 64, 192])
 
     def forward(self, x):
         B, C, H, W = x.shape
@@ -137,7 +140,7 @@ class Block(nn.Module):
 class TomViT(nn.Module):
     def __init__(self, img_size=32, patch_size=4, in_chans=3, num_classes=10, embed_dim=192, depth=9,
                  num_heads=12, mlp_ratio=2., qkv_bias=False, drop_rate=0., attn_drop_rate=0., has_cls_token=True,
-                 has_last_norm=True, has_basic_poe=True,
+                 has_last_norm=True, has_basic_poe=True, has_auto_encoder=False,
                  ):
         super().__init__()
 
@@ -145,6 +148,8 @@ class TomViT(nn.Module):
         self.has_cls_token = has_cls_token
         self.has_last_norm = has_last_norm
         self.has_basic_poe = has_basic_poe
+        # auto encoder
+        self.has_auto_encoder = has_auto_encoder
 
         self.num_classes = num_classes
         self.num_features = self.embed_dim = embed_dim  # num_features for consistency with other models
@@ -165,8 +170,22 @@ class TomViT(nn.Module):
         # Classifier head(s)
         self.head = nn.Linear(self.num_features, num_classes) if num_classes > 0 else nn.Identity()
 
+        # auto encoder
+        if self.has_auto_encoder:
+            self.ae = AutoEncoder(img_size, int(img_size//patch_size), embed_dim, has_cls_token)
+
     def forward(self, x):
+
+        # AE
+        if self.has_auto_encoder:
+            z_seq, x_ = self.ae(x)
+
         x = self.patch_embed(x)
+
+        # AE
+        if self.has_auto_encoder:
+            x = x + z_seq
+
         x = self.blocks(x)
         if self.has_last_norm:
             x = self.norm(x)
@@ -174,6 +193,11 @@ class TomViT(nn.Module):
             x = self.head(x)[:, 0]
         else:
             x = self.head(x).mean(1)
+
+        # AE
+        if self.has_auto_encoder:
+            return x, x_
+
         return x
 
 

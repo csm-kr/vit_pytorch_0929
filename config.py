@@ -39,13 +39,16 @@ def get_args_parser():
     parser.set_defaults(has_basic_poe=True)
     parser.add_argument('--has_basic_poe_false', dest='has_basic_poe', action='store_false', help='if not, sinusoid 2d')
 
+    parser.set_defaults(has_auto_encoder=False)
+    parser.add_argument('--has_auto_encoder_true', dest='has_auto_encoder', action='store_true')
+
     # train & optimizer
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--epoch', type=int)
     parser.add_argument('--batch_size', type=int)
     parser.add_argument('--warmup', type=int, help='warmup epoch')
     parser.add_argument('--weight_decay', type=float, default=5e-2)
-    parser.add_argument('--save_step', type=int, default=90, help='if save_step < epoch, then save')
+    parser.add_argument('--save_step', type=int, default=1000, help='if save_step < epoch, then save')
     parser.add_argument('--num_workers', type=int, default=0)
     parser.add_argument('--log_dir', type=str, default='./logs')
 

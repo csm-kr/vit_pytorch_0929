@@ -2,6 +2,7 @@ import os
 import time
 import torch
 from tqdm import tqdm
+import torch.nn.functional as F
 from augmentations.cut_mix_up import get_cutmix_and_mixup_output_and_loss
 
 
@@ -21,8 +22,13 @@ def train_one_epoch(epoch, vis, train_loader, model, optimizer, criterion, sched
         if opts.is_vit_data_augmentation:
             outputs, loss = get_cutmix_and_mixup_output_and_loss(images, labels, criterion, model, opts)
         else:
-            outputs = model(images)
-            loss = criterion(outputs, labels)
+            if opts.auto_encoder:
+                outputs, x_ = model(images)
+                loss = criterion(outputs, labels)
+                loss += F.mse_loss(x_, images)
+            else:
+                outputs = model(images)
+                loss = criterion(outputs, labels)
 
         # ----------------- update -----------------
         optimizer.zero_grad()

@@ -2,7 +2,12 @@ import os
 import torch
 from tqdm import tqdm
 from utils import accuracy
-from augmentations.cut_mix_up import get_cutmix_and_mixup_output_and_loss
+import torch.nn.functional as F
+
+# for test
+from dataset import build_dataloader
+from models.build import build_model
+from loss import build_loss
 
 
 def test_and_evaluate(epoch, vis, test_loader, model, criterion, opts, xl_log_saver=None, result_best=None, is_load=True):
@@ -59,8 +64,13 @@ def test_and_evaluate(epoch, vis, test_loader, model, criterion, opts, xl_log_sa
             labels = data[1].to(int(opts.gpu_ids[opts.rank]))
 
             # ----------------- loss -----------------
-            outputs = model(images)
-            loss = criterion(outputs, labels)
+            if opts.has_auto_encoder:
+                outputs, x_ = model(images)
+                loss = criterion(outputs, labels)
+                loss += F.mse_loss(x_, images)
+            else:
+                outputs = model(images)
+                loss = criterion(outputs, labels)
 
             # ----------------- evaluate -----------------
             n += images.size(0)
@@ -110,3 +120,49 @@ def test_and_evaluate(epoch, vis, test_loader, model, criterion, opts, xl_log_sa
                                       'model_state_dict': model.state_dict()}
                     torch.save(checkpoint, os.path.join(opts.log_dir, opts.name, 'saves', opts.name + '.best.pth.tar'))
             return result_best
+
+
+def test_wokrer(rank, opts):
+
+    # 1. ** argparser **
+    print(opts)
+
+    # 2. ** device **
+    device = torch.device('cuda:{}'.format(int(opts.gpu_ids[opts.rank])))
+
+    # 3. ** visdom **
+    vis = None
+
+    # 4. ** dataset / dataloader **
+    train_loader, test_loader = build_dataloader(opts)
+
+    # 5. ** model **
+    model = build_model(opts)
+    model = model.to(device)
+
+    # 6. ** criterion **
+    criterion = build_loss(opts)
+    test_and_evaluate(opts.test_epoch, vis, test_loader, model, criterion, opts)
+
+
+if __name__ == '__main__':
+    import configargparse
+    import torch.multiprocessing as mp
+    from config import get_args_parser
+
+    parser = configargparse.ArgumentParser('Test', parents=[get_args_parser()])
+    opts = parser.parse_args()
+
+    if len(opts.gpu_ids) > 1:
+        opts.distributed = True
+
+    opts.world_size = len(opts.gpu_ids)
+    opts.num_workers = len(opts.gpu_ids) * 4
+
+    if opts.distributed:
+        mp.spawn(test_wokrer,
+                 args=(opts,),
+                 nprocs=opts.world_size,
+                 join=True)
+    else:
+        test_wokrer(opts.rank, opts)
