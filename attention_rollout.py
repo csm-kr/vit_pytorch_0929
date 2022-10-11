@@ -60,11 +60,13 @@ def show_attentions(img, results, num_layers=1, has_cls_token=True, show_all_hea
     # ============================= for one mean img =============================
     if not show_all_heads:
         v_means = v.mean(0)  # 모든 헤드들을 다 평균 낸다면 v_ = v[0]
+        # v_means = v.max(0)[0]  # 모든 헤드들을 다 평균 낸다면 v_ = v[0]
 
         if has_cls_token:
             mask = v_means[idx_cls_token, 1:].reshape(grid_size, grid_size).detach().numpy()
         else:
             mask = v_means.mean(0).reshape(grid_size, grid_size).detach().numpy()
+            # mask = v_means.max(0)[0].reshape(grid_size, grid_size).detach().numpy()
 
         mask = cv2.resize(mask / mask.max(), (im.shape[1], im.shape[0]))[..., np.newaxis]
         result = (mask * img)
@@ -93,6 +95,7 @@ def show_attentions(img, results, num_layers=1, has_cls_token=True, show_all_hea
             masks = v[:, idx_cls_token, 1:].reshape(results.size(1), grid_size, grid_size).detach().numpy()
         else:
             masks = v.mean(1).reshape(results.size(1), grid_size, grid_size).detach().numpy()
+            # masks = v.max(1)[0].reshape(results.size(1), grid_size, grid_size).detach().numpy()
 
         for mask in masks:
             m = cv2.resize(mask / mask.max(), (im.shape[1], im.shape[0]))[..., np.newaxis]
@@ -136,7 +139,7 @@ if __name__ == '__main__':
     from dataset import build_dataloader
     from models.build import build_model
 
-    parser = configargparse.ArgumentParser('Vit', parents=[get_args_parser()])
+    parser = configargparse.ArgumentParser('Attention', parents=[get_args_parser()])
     opts = parser.parse_args()
 
     # 2. ** device **
@@ -181,6 +184,6 @@ if __name__ == '__main__':
         x = model(batch_img)
         attn = attention_getter.attentions
         results = rollout(attn)    # [layers, heads, token, token]
-        show_attentions(im, results, -1, has_cls_token=False, show_all_heads=True)
+        show_attentions(im, results, -1, has_cls_token=opts.has_cls_token, show_all_heads=True)
 
 
