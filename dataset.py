@@ -84,12 +84,12 @@ def build_dataloader(opts, is_return_mean_std=False):
         opts.num_classes = 100
         opts.img_size = 32
         opts.data_root = './data/CIFAR100'
-        MEAN, STD = (0.5071, 0.4867, 0.4408), (0.2673, 0.2564, 0.2762)
+        MEAN, STD = (0.507, 0.4865, 0.4409), (0.2673, 0.2564, 0.2762)
 
         if opts.is_vit_data_augmentation:
             transform_train = tfs.Compose([
-                tfs.RandomCrop(32, padding=4),
                 tfs.RandomHorizontalFlip(),
+                tfs.RandomCrop(32, padding=4),
                 CIFAR10Policy(),
                 tfs.ToTensor(),
                 tfs.Normalize(mean=MEAN, std=STD),
