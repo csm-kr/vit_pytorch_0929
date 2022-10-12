@@ -32,6 +32,7 @@ def get_args_parser():
     parser.add_argument('--num_heads', type=int)
     parser.add_argument('--mlp_ratio', type=float)
     # qkv_bias false, drop_rate 0.(proj, mlp...) , atte_drop_rate 0. (only attention)
+    parser.add_argument('--drop_path', type=float)
     parser.set_defaults(has_cls_token=True)
     parser.add_argument('--has_cls_token_false', dest='has_cls_token', action='store_false')
     parser.set_defaults(has_last_norm=True)

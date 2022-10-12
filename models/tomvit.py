@@ -10,6 +10,7 @@ from timm.models.layers import trunc_normal_, DropPath
 def init_weights(m):
     if isinstance(m, (nn.Linear, nn.Conv2d)):
         nn.init.xavier_normal_(m.weight)
+        # nn.init.xavier_uniform_(m.weight)
         if m.bias is not None:
             nn.init.constant_(m.bias, 0)
     elif isinstance(m, nn.LayerNorm):
@@ -67,7 +68,7 @@ class EmbeddingLayer(nn.Module):
             nn.init.normal_(self.cls_token, std=1e-6)
 
             # FIXME
-            self.cls_token = nn.Parameter(torch.randn(1, 1, embed_dim))
+            # self.cls_token = nn.Parameter(torch.randn(1, 1, embed_dim))
 
             self.num_tokens += 1
         if has_basic_poe:
@@ -75,7 +76,7 @@ class EmbeddingLayer(nn.Module):
             trunc_normal_(self.pos_embed, std=.02)
 
             # FIXME
-            self.pos_embed = nn.Parameter(torch.randn(1, self.num_tokens, self.embed_dim))
+            # self.pos_embed = nn.Parameter(torch.randn(1, self.num_tokens, self.embed_dim))
         else:
             self.register_buffer('pos_embed', positionalencoding2d(self.embed_dim,
                                                                    int(math.sqrt(self.num_tokens)),
@@ -151,7 +152,7 @@ class MLP(nn.Module):
 
 class Block(nn.Module):
 
-    def __init__(self, dim, num_heads, mlp_ratio=4., qkv_bias=False,
+    def __init__(self, dim, num_heads, mlp_ratio=2., qkv_bias=False,
                  drop=0., attn_drop=0., drop_path=0.1, act_layer=nn.GELU, norm_layer=nn.LayerNorm,
                  ):
         super().__init__()
@@ -171,8 +172,8 @@ class Block(nn.Module):
 
 class TomViT(nn.Module):
     def __init__(self, img_size=32, patch_size=4, in_chans=3, num_classes=10, embed_dim=192, depth=9,
-                 num_heads=12, mlp_ratio=2., qkv_bias=False, drop_rate=0., attn_drop_rate=0., has_cls_token=True,
-                 has_last_norm=True, has_basic_poe=True, has_auto_encoder=False,
+                 num_heads=12, mlp_ratio=2., qkv_bias=False, drop_rate=0., attn_drop_rate=0., drop_path=0.,
+                 has_cls_token=True, has_last_norm=True, has_basic_poe=True, has_auto_encoder=False,
                  ):
         super().__init__()
 
@@ -194,7 +195,7 @@ class TomViT(nn.Module):
         self.blocks = nn.Sequential(*[
             Block(
                 dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, drop=drop_rate,
-                attn_drop=attn_drop_rate, norm_layer=norm_layer, act_layer=act_layer)
+                attn_drop=attn_drop_rate, drop_path=drop_path, act_layer=act_layer, norm_layer=norm_layer)
             for i in range(depth)])
 
         # last norm
@@ -210,7 +211,7 @@ class TomViT(nn.Module):
 
         # FIXME
         # xavier init
-        self.apply(init_weights)
+        # self.apply(init_weights)
 
     def forward(self, x):
 
