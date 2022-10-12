@@ -46,11 +46,11 @@ def main_worker(rank, opts):
     # 8. ** scheduler **
     scheduler = CosineAnnealingWarmupRestarts(
         optimizer,
-        first_cycle_steps=opts.epoch,
+        first_cycle_steps=int(opts.epoch * len(train_loader)),
         cycle_mult=1.,
         max_lr=opts.lr,
-        min_lr=5e-5,
-        warmup_steps=opts.warmup
+        min_lr=1e-6,
+        warmup_steps=int(opts.warmup * len(train_loader)),
         )
 
     # 9. ** logger **
@@ -72,7 +72,6 @@ def main_worker(rank, opts):
 
         # 11. test
         result_best = test_and_evaluate(epoch, vis, test_loader, model, criterion, opts, xl_log_saver, result_best, is_load=False)
-        scheduler.step()
 
 
 if __name__ == '__main__':
