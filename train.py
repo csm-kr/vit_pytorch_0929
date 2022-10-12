@@ -34,6 +34,7 @@ def train_one_epoch(epoch, vis, train_loader, model, optimizer, criterion, sched
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
+        scheduler.step()
 
         # get lr
         for param_group in optimizer.param_groups:
