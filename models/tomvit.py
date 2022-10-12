@@ -3,8 +3,18 @@ import math
 import torch
 import torch.nn as nn
 from torchsummary import summary
-from timm.models.layers import trunc_normal_
 from models.ae import AutoEncoder
+from timm.models.layers import trunc_normal_, DropPath
+
+
+def init_weights(m):
+    if isinstance(m, (nn.Linear, nn.Conv2d)):
+        nn.init.xavier_normal_(m.weight)
+        if m.bias is not None:
+            nn.init.constant_(m.bias, 0)
+    elif isinstance(m, nn.LayerNorm):
+            nn.init.constant_(m.bias, 0)
+            nn.init.constant_(m.weight, 1.0)
 
 
 def positionalencoding2d(d_model, height, width):
@@ -38,16 +48,34 @@ class EmbeddingLayer(nn.Module):
 
         self.num_tokens = (img_size // patch_size) ** 2
         self.embed_dim = embed_dim
+
+        # option1
         self.project = nn.Conv2d(in_chans, embed_dim, kernel_size=patch_size, stride=patch_size)
+
+        # option2
+        # FIXME
+        # from einops.layers.torch import Rearrange
+        # self.patch_dim = in_chans * patch_size * patch_size
+        # self.project = nn.Sequential(
+        #         Rearrange('b c (h p1) (w p2) -> b (h w) (p1 p2 c)', p1=patch_size, p2=patch_size),
+        #         nn.Linear(self.patch_dim, self.embed_dim)
+        #     )
 
         self.has_cls_token = has_cls_token
         if has_cls_token:
             self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
             nn.init.normal_(self.cls_token, std=1e-6)
+
+            # FIXME
+            self.cls_token = nn.Parameter(torch.randn(1, 1, embed_dim))
+
             self.num_tokens += 1
         if has_basic_poe:
             self.pos_embed = nn.Parameter(torch.zeros(1, self.num_tokens, self.embed_dim))
             trunc_normal_(self.pos_embed, std=.02)
+
+            # FIXME
+            self.pos_embed = nn.Parameter(torch.randn(1, self.num_tokens, self.embed_dim))
         else:
             self.register_buffer('pos_embed', positionalencoding2d(self.embed_dim,
                                                                    int(math.sqrt(self.num_tokens)),
@@ -63,7 +91,7 @@ class EmbeddingLayer(nn.Module):
 
         if self.has_cls_token:
             # concat cls token
-            cls_tokens = self.cls_token.expand(B, -1, -1)
+            cls_tokens = self.cls_token.expand(B, -1, -1)  # [1, 1, 192 -> B, 1, 192]
             z = torch.cat([cls_tokens, z], dim=1)
 
         # add position embedding
@@ -80,6 +108,7 @@ class MSA(nn.Module):
         self.scale = head_dim ** -0.5
 
         self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
+
         self.attn_drop = nn.Dropout(attn_drop)
         self.proj = nn.Linear(dim, dim)
         self.proj_drop = nn.Dropout(proj_drop)
@@ -123,17 +152,20 @@ class MLP(nn.Module):
 class Block(nn.Module):
 
     def __init__(self, dim, num_heads, mlp_ratio=4., qkv_bias=False,
-                 drop=0., attn_drop=0., act_layer=nn.GELU, norm_layer=nn.LayerNorm,
+                 drop=0., attn_drop=0., drop_path=0.1, act_layer=nn.GELU, norm_layer=nn.LayerNorm,
                  ):
         super().__init__()
+
         self.norm1 = norm_layer(dim)
         self.norm2 = norm_layer(dim)
         self.attn = MSA(dim, num_heads=num_heads, qkv_bias=qkv_bias, attn_drop=attn_drop, proj_drop=drop)
         self.mlp = MLP(in_features=dim, hidden_features=int(dim * mlp_ratio), act_layer=act_layer, drop=drop)
+        self.drop_path1 = DropPath(drop_path) if drop_path > 0. else nn.Identity()
+        self.drop_path2 = DropPath(drop_path) if drop_path > 0. else nn.Identity()
 
     def forward(self, x):
-        x = x + self.attn(self.norm1(x))
-        x = x + self.mlp(self.norm2(x))
+        x = x + self.drop_path1(self.attn(self.norm1(x)))
+        x = x + self.drop_path2(self.mlp(self.norm2(x)))
         return x
 
 
@@ -148,6 +180,7 @@ class TomViT(nn.Module):
         self.has_cls_token = has_cls_token
         self.has_last_norm = has_last_norm
         self.has_basic_poe = has_basic_poe
+
         # auto encoder
         self.has_auto_encoder = has_auto_encoder
 
@@ -157,6 +190,7 @@ class TomViT(nn.Module):
         act_layer = nn.GELU
 
         self.patch_embed = EmbeddingLayer(in_chans, embed_dim, img_size, patch_size, has_cls_token, has_basic_poe)
+
         self.blocks = nn.Sequential(*[
             Block(
                 dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, drop=drop_rate,
@@ -173,6 +207,10 @@ class TomViT(nn.Module):
         # auto encoder
         if self.has_auto_encoder:
             self.ae = AutoEncoder(img_size, int(img_size//patch_size), embed_dim, has_cls_token)
+
+        # FIXME
+        # xavier init
+        self.apply(init_weights)
 
     def forward(self, x):
 
@@ -197,21 +235,21 @@ class TomViT(nn.Module):
         # AE
         if self.has_auto_encoder:
             return x, x_
-
         return x
 
 
 if __name__ == '__main__':
     img = torch.randn([1, 3, 32, 32]).cuda()
     tomvit = TomViT().cuda()
+    print(tomvit)
     x = tomvit(img)
     print(x.size())
-
-    tomvit = TomViT(has_cls_token=False, has_last_norm=False).cuda()
-    x = tomvit(img)
-    print(x.size())
-
-    summary(tomvit, (3, 32, 32))
+    #
+    # tomvit = TomViT(has_cls_token=False, has_last_norm=False).cuda()
+    # x = tomvit(img)
+    # print(x.size())
+    #
+    # summary(tomvit, (3, 32, 32))
 
 
 
