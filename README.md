@@ -11,7 +11,7 @@ The goal of this repo is to find the analysis of various components of ViT (e.g.
 - optimizer : adamw
 - betas : (0.9, 0.999)
 - weight_decay : 5e-2
-- lr scheduler : cosine scheduler
+- lr scheduler : cosine scheduler(min : 1e-5)
 - loss : cross entropy
 - model : Vit 
 ```
@@ -37,8 +37,9 @@ The goal of this repo is to find the analysis of various components of ViT (e.g.
 
 | model               | Batch size     | resolution | Top1-Acc          | Top5-Acc | Val Loss    | Params  |
 |---------------------|----------------|------------|-------------------|----------|-------------|---------|
-| ViT(vaswani)        | 128            | 32 x 32    | 0.9379            | -        | 0.6579      | 2692426 | 
-| ViT(sinusoid2d)     | 128            | 32 x 32    | 0.9474            | -        | 0.6325      | 2692426 | 
+| ViT(vaswani)        | 128            | 32 x 32    | 0.9358            | -        | 0.6579      | 2692426 | 
+| ViT(paper)          | 128            | 32 x 32    | 0.9379            | -        | 0.6579      | 2692426 | 
+| ViT(tomvit)         | 128            | 32 x 32    | 0.9474            | -        | 0.6325      | 2692426 | 
 | ViT(+ae)            | 128            | 32 x 32    | 0.9515            | -        | 0.6325      | 2692426 | 
 
 ```
@@ -53,7 +54,23 @@ The goal of this repo is to find the analysis of various components of ViT (e.g.
 
 | model               | Batch size     | resolution | Top1-Acc          | Top5-Acc | Val Loss    | Params  |
 |---------------------|----------------|------------|-------------------|----------|-------------| ------  |
-| ViT(vaswani)        | 128            | 32 x 32    | 0.7136            | -        | -           |         |
+| ViT(vaswani)        | 128            | 32 x 32    | 0.7278            | -        | -           |         |
+| ViT(xavier)         | 128            | 32 x 32    | 0.7047            | -        | -           |         |
+| ViT(paper)          | 128            | 32 x 32    | 0.7381            | -        | -           |         |
+| ViT(tomvit)         | 128            | 32 x 32    | 0.7539            | -        | -           |         |
+| ViT(tomvit+ae)      | 128            | 32 x 32    | 0.7721            | -        | -           |         |
+
+
+```
+python main.py --config ./configs/cifar100/cifar100_tomvit_t_t_t.txt --gpu_ids 0
+python main.py --config ./configs/cifar100/cifar100_tomvit_f_f_f_t.txt --gpu_ids 1
+python main.py --config ./configs/cifar100/cifar100_tomvit_t_t_t_x.txt --gpu_ids 2
+python main.py --config ./configs/cifar100/cifar100_tomvit_f_f_f.txt --gpu_ids 3
+python main.py --config ./configs/cifar100/cifar100_tomvit_f_f_f_t2.txt --gpu_ids 0
+python main.py --config ./configs/cifar100/cifar100_tomvit_f_f_f_t_dae.txt --gpu_ids 1
+python main.py --config ./configs/cifar100/cifar100_tomvit_t_f_t.txt --gpu_ids 1
+
+```
 
 #### Imagenet1K
 

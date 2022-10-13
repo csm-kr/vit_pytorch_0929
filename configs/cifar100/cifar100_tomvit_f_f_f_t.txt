@@ -1,9 +1,9 @@
 # train
-name = 1011_tomvit_f_f_f_t
+name = cifar100_tomvit_f_f_f_t
 
 # data
 vit_data_augmentation_true
-data_type = cifar10
+data_type = cifar100
 
 # model
 model_type = tomvit

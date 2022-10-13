@@ -75,8 +75,8 @@ def build_dataloader(opts, is_return_mean_std=False):
                                  pin_memory=True,
                                  )
 
-    if is_return_mean_std:
-        return train_loader, test_loader, MEAN, STD
+        if is_return_mean_std:
+            return train_loader, test_loader, MEAN, STD
 
     elif opts.data_type == 'cifar100':
         print('dataset : {}'.format(opts.data_type))
@@ -140,7 +140,7 @@ def build_dataloader(opts, is_return_mean_std=False):
                                  pin_memory=True,
                                  )
 
-    if is_return_mean_std:
-        return train_loader, test_loader, MEAN, STD
+        if is_return_mean_std:
+            return train_loader, test_loader, MEAN, STD
 
     return train_loader, test_loader

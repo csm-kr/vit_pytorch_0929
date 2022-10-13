@@ -5,6 +5,7 @@ import torch.nn as nn
 from torchsummary import summary
 from models.ae import AutoEncoder
 from timm.models.layers import trunc_normal_, DropPath
+from noise import salt_and_pepper
 
 
 def init_weights(m):
@@ -174,6 +175,7 @@ class TomViT(nn.Module):
     def __init__(self, img_size=32, patch_size=4, in_chans=3, num_classes=10, embed_dim=192, depth=9,
                  num_heads=12, mlp_ratio=2., qkv_bias=False, drop_rate=0., attn_drop_rate=0., drop_path=0.,
                  has_cls_token=True, has_last_norm=True, has_basic_poe=True, has_auto_encoder=False,
+                 has_xavier_init=False,
                  ):
         super().__init__()
 
@@ -184,6 +186,7 @@ class TomViT(nn.Module):
 
         # auto encoder
         self.has_auto_encoder = has_auto_encoder
+        self.has_xavier_init = has_xavier_init
 
         self.num_classes = num_classes
         self.num_features = self.embed_dim = embed_dim  # num_features for consistency with other models
@@ -211,13 +214,25 @@ class TomViT(nn.Module):
 
         # FIXME
         # xavier init
-        # self.apply(init_weights)
+        if self.has_xavier_init:
+            self.apply(init_weights)
+
+        # count params
+        print("num_params : ", self.count_parameters())
+
+    def count_parameters(self):
+        return sum(p.numel() for p in self.parameters())
 
     def forward(self, x):
 
         # AE
         if self.has_auto_encoder:
             z_seq, x_ = self.ae(x)
+
+            # FIXME
+            # Denoising AutoEncoder
+            # x_noise = salt_and_pepper(x, 0.1)
+            # z_seq, x_ = self.ae(x_noise)
 
         x = self.patch_embed(x)
 
@@ -242,15 +257,25 @@ class TomViT(nn.Module):
 if __name__ == '__main__':
     img = torch.randn([1, 3, 32, 32]).cuda()
     tomvit = TomViT().cuda()
-    print(tomvit)
+    # 2692426
     x = tomvit(img)
     print(x.size())
-    #
-    # tomvit = TomViT(has_cls_token=False, has_last_norm=False).cuda()
-    # x = tomvit(img)
-    # print(x.size())
-    #
-    # summary(tomvit, (3, 32, 32))
+
+    img = torch.randn([2, 3, 224, 224]).cuda()
+    tomvit = TomViT(img_size=224, patch_size=16, in_chans=3, num_classes=1000, embed_dim=768, depth=12,
+                    num_heads=12, mlp_ratio=4., qkv_bias=False, drop_rate=0., attn_drop_rate=0., drop_path=0.1,
+                    has_cls_token=True, has_last_norm=True, has_basic_poe=True, has_auto_encoder=True).cuda()
+    # 86599156
+    print(tomvit(img)[0].size())
+    print(tomvit(img)[1].size())
+
+    # tomvit = TomViT(img_size=224, patch_size=16, in_chans=3, num_classes=1000, embed_dim=768, depth=12,
+    #                 num_heads=12, mlp_ratio=4., qkv_bias=False, drop_rate=0., attn_drop_rate=0., drop_path=0.1,
+    #                 has_cls_token=True, has_last_norm=True, has_basic_poe=True, has_auto_encoder=False).cuda()
+    # 86540008
+    # print(tomvit(img).size())
+
+
 
 
 

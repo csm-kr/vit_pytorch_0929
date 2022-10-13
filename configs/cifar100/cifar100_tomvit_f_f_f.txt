@@ -1,9 +1,9 @@
 # train
-name = 1011_tomvit_f_f_f_t
+name = cifar100_tomvit_f_f_f
 
 # data
 vit_data_augmentation_true
-data_type = cifar10
+data_type = cifar100
 
 # model
 model_type = tomvit
@@ -18,7 +18,6 @@ drop_path=0.1
 has_cls_token_false
 has_last_norm_false
 has_basic_poe_false
-has_auto_encoder_true
 
 # train
 lr = 0.001

@@ -1,9 +1,9 @@
 # train
-name = 1011_tomvit_f_f_f_t
+name = cifar100_tomvit_t_f_t
 
 # data
 vit_data_augmentation_true
-data_type = cifar10
+data_type = cifar100
 
 # model
 model_type = tomvit
@@ -15,10 +15,9 @@ depth=9
 num_heads=12
 mlp_ratio=2.
 drop_path=0.1
-has_cls_token_false
+# has_cls_token_false
 has_last_norm_false
-has_basic_poe_false
-has_auto_encoder_true
+# has_basic_poe_false
 
 # train
 lr = 0.001
@@ -29,4 +28,3 @@ batch_size = 128
 # distributed
 rank = 0
 gpu_ids = [0]
-# gpu_ids = [0, 1, 2, 3]
