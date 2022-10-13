@@ -56,10 +56,20 @@ The goal of this repo is to find the analysis of various components of ViT (e.g.
 |---------------------|----------------|------------|-------------------|----------|-------------| ------  |
 | ViT(vaswani)        | 128            | 32 x 32    | 0.7278            | -        | -           |         |
 | ViT(xavier)         | 128            | 32 x 32    | 0.7047            | -        | -           |         |
+| ViT(tft)            | 128            | 32 x 32    | 0.7047            | -        | -           |         |
 | ViT(paper)          | 128            | 32 x 32    | 0.7381            | -        | -           |         |
 | ViT(tomvit)         | 128            | 32 x 32    | 0.7539            | -        | -           |         |
 | ViT(tomvit+ae)      | 128            | 32 x 32    | 0.7721            | -        | -           |         |
 
+##### ablation for tomvit
+
+| model               | Cls token | Last norm  | Basic pe   | Batch size    | Resolution | Top1-Acc          | Top5-Acc | Val Loss    |Params|
+|---------------------|-----------|------------|------------|---------------|------------|-------------------|----------|-------------|------|
+| ViT(ttt)            |True       |True        |True        | 128           | 32 x 32    | 0.7278            | -        | -           |      |
+| ViT(ttf)            |True       |True        |False       | 128           | 32 x 32    | -                 | -        | -           |      |
+| ViT(tft)            |True       |False       |True        | 128           | 32 x 32    | 0.7347            | -        | -           |      |
+| ViT(ftt)            |False      |True        |True        | 128           | 32 x 32    | -                 | -        | -           |      |
+ 
 
 ```
 python main.py --config ./configs/cifar100/cifar100_tomvit_t_t_t.txt --gpu_ids 0
