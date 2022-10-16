@@ -66,12 +66,13 @@ The goal of this repo is to find the analysis of various components of ViT (e.g.
 | model               | Cls token | Last norm  | Basic pe   | Batch size    | Resolution | Top1-Acc          | Top5-Acc | Val Loss    |Params|
 |---------------------|-----------|------------|------------|---------------|------------|-------------------|----------|-------------|------|
 | ViT(ttt)            |True       |True        |True        | 128           | 32 x 32    | 72.78             | -        | -           |      |
-| ViT(ttf)            |True       |True        |False       | 128           | 32 x 32    | -                 | -        | -           |      |
+| ViT(ttf)            |True       |True        |False       | 128           | 32 x 32    | 72.61             | -        | -           |      |
 | ViT(tft)            |True       |False       |True        | 128           | 32 x 32    | 73.47 (+0.69)     | -        | -           |      |
-| ViT(ftt)            |True       |False       |False       | 128           | 32 x 32    | -                 | -        | -           |      |
-| ViT(ftt)            |False      |True        |True        | 128           | 32 x 32    | -                 | -        | -           |      |
-
- 
+| ViT(tff)            |True       |False       |False       | 128           | 32 x 32    | 73.37 (+0.59)     | -        | -           |      |
+| ViT(ftt)            |False      |True        |True        | 128           | 32 x 32    | 74.46 (+1.68)     | -        | -           |      |
+| ViT(ftf)            |False      |True        |False       | 128           | 32 x 32    | 75.64             | -        | -           |      |
+| ViT(fft)            |False      |False       |True        | 128           | 32 x 32    | 76.10             | -        | -           |      |
+| ViT(fft)            |False      |False       |False       | 128           | 32 x 32    | 75.39             | -        | -           |      |
 
 ```
 python main.py --config ./configs/cifar100/cifar100_tomvit_t_t_t.txt --gpu_ids 0
@@ -84,6 +85,7 @@ python main.py --config ./configs/cifar100/cifar100_tomvit_t_f_t.txt --gpu_ids 1
 python main.py --config ./configs/cifar100/cifar100_tomvit_t_t_f.txt --gpu_ids 0
 python main.py --config ./configs/cifar100/cifar100_tomvit_f_t_t.txt --gpu_ids 2
 python main.py --config ./configs/cifar100/cifar100_tomvit_t_f_f.txt --gpu_ids 3
+python main.py --config ./configs/cifar100/cifar100_tomvit_f_f_t_t.txt --gpu_ids 0
 ```
 
 #### Imagenet1K

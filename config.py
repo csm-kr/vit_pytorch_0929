@@ -44,6 +44,8 @@ def get_args_parser():
     parser.add_argument('--has_auto_encoder_true', dest='has_auto_encoder', action='store_true')
     parser.set_defaults(has_xavier_init=False)
     parser.add_argument('--has_xavier_init_true', dest='has_xavier_init', action='store_true')
+    parser.set_defaults(use_gpsa=False)
+    parser.add_argument('--use_gpsa_true', dest='use_gpsa', action='store_true')
 
     # train & optimizer
     parser.add_argument('--lr', type=float, default=0.001)
