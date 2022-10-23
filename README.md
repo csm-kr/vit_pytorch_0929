@@ -88,6 +88,13 @@ python main.py --config ./configs/cifar100/cifar100_tomvit_t_f_f.txt --gpu_ids 3
 python main.py --config ./configs/cifar100/cifar100_tomvit_f_f_t_t.txt --gpu_ids 0
 ```
 
+| model               |  Batch size    | Resolution | Top1-Acc          | Top5-Acc | Val Loss    |Params|
+|---------------------|----------------|------------|-------------------|----------|-------------|------|
+| ViT(fttft)          |  128           | 32 x 32    | 77.81             | -        | -           |      |
+| ViT(ffftt)          |  128           | 32 x 32    | 79.04             | -        | -           |      |
+| ViT(ftttff)         |  128           | 32 x 32    | 74.58             | -        | -           |      |
+| ViT(ffftff)         |  128           | 32 x 32    | 75.57             | -        | -           |      |
+
 #### Imagenet1K
 
 | Model          | Batch size     | Resolution | Top1-Acc          | Top5-Acc | Val Loss | Params            |
