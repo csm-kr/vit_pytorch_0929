@@ -7,6 +7,7 @@ import torch.nn as nn
 
 from dataset import build_dataloader
 from models.build import build_model
+from torch.nn.parallel import DistributedDataParallel as DDP
 from loss import build_loss
 
 from scheduler import CosineAnnealingWarmupRestarts
@@ -16,11 +17,16 @@ from utils import resume
 from train import train_one_epoch
 from test import test_and_evaluate
 
+from utils import init_for_distributed
+
 
 def main_worker(rank, opts):
 
     # 1. ** argparser **
     print(opts)
+
+    if opts.distributed:
+        init_for_distributed(rank, opts)
 
     # 2. ** device **
     device = torch.device('cuda:{}'.format(int(opts.gpu_ids[opts.rank])))
@@ -29,11 +35,17 @@ def main_worker(rank, opts):
     vis = visdom.Visdom(port=opts.visdom_port)
 
     # 4. ** dataset / dataloader **
-    train_loader, test_loader = build_dataloader(opts)
+    if opts.distributed:
+        train_loader, test_loader, train_sampler = build_dataloader(opts)
+    else:
+        train_loader, test_loader = build_dataloader(opts)
 
     # 5. ** model **
     model = build_model(opts)
     model = model.to(device)
+    if opts.distributed:
+        model = DDP(module=model,
+                    device_ids=[int(opts.gpu_ids[opts.rank])])
 
     # 6. ** criterion **
     criterion = build_loss(opts)
@@ -59,13 +71,17 @@ def main_worker(rank, opts):
     if opts.rank == 0:
         xl_log_saver = XLLogSaver(xl_folder_name=os.path.join(opts.log_dir, opts.name),
                                   xl_file_name=opts.name,
-                                  tabs=('epoch', 'accuracy_top1', 'val_loss'))
+                                  tabs=('epoch', 'accuracy_top1', 'accuracy_top5', 'val_loss'))
 
     model, optimizer, scheduler = resume(opts, model, optimizer, scheduler)
 
-    result_best = {'epoch': 0, 'accuracy_top1': 0., 'val_loss': 0.}
+    result_best = {'epoch': 0, 'accuracy_top1': 0., 'accuracy_top5': 0., 'val_loss': 0.}
 
     for epoch in range(opts.start_epoch, opts.epoch):
+
+        if opts.distributed:
+            if train_sampler is not None:
+                train_sampler.set_epoch(epoch)
 
         # 10. train
         train_one_epoch(epoch, vis, train_loader, model, optimizer, criterion, scheduler, opts)
@@ -78,7 +94,7 @@ if __name__ == '__main__':
     import torch.multiprocessing as mp
     from config import get_args_parser
 
-    parser = configargparse.ArgumentParser('Vit', parents=[get_args_parser()])
+    parser = configargparse.ArgumentParser('Tomvit', parents=[get_args_parser()])
     opts = parser.parse_args()
 
     if len(opts.gpu_ids) > 1:

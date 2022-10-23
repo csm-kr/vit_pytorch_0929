@@ -103,10 +103,7 @@ def test_and_evaluate(epoch, vis, test_loader, model, criterion, opts, xl_log_sa
             # xl_log_saver
             if opts.rank == 0:
                 if xl_log_saver is not None:
-                    if opts.num_classes == 1000:
-                        xl_log_saver.insert_each_epoch(contents=(epoch, acc1, acc5, loss_val))
-                    elif opts.num_classes == 10 or opts.num_classes == 100:
-                        xl_log_saver.insert_each_epoch(contents=(epoch, acc1, loss_val))
+                    xl_log_saver.insert_each_epoch(contents=(epoch, acc1, acc5, loss_val))
 
             # set result_best
             if result_best is not None:
