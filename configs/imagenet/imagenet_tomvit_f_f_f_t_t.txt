@@ -1,0 +1,34 @@
+# train
+name = imagenet_tomvit_f_f_f_t_t
+
+# data
+data_root = /home/cvmlserver7/Sungmin/data/imagenet
+vit_data_augmentation_true
+data_type = imagenet
+
+# model
+model_type = tomvit
+img_size=224
+patch_size=16
+in_chans=3
+embed_dim=768
+depth=12
+num_heads=12
+mlp_ratio=4.
+drop_path=0.1
+has_cls_token_false
+has_last_norm_false
+has_basic_poe_false
+has_auto_encoder_true
+use_gpsa_true
+
+# train
+lr = 0.001
+epoch = 300
+warmup = 10
+batch_size = 128
+
+# distributed
+rank = 0
+# gpu_ids = [0]
+gpu_ids = [0, 1, 2, 3]

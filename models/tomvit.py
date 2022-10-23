@@ -5,6 +5,8 @@ import torch.nn as nn
 from torchsummary import summary
 from models.ae import AutoEncoder
 from timm.models.layers import trunc_normal_, DropPath
+from models.gpsa import GPSA
+from models.sasa import SASA
 from noise import salt_and_pepper
 
 
@@ -45,7 +47,7 @@ def positionalencoding2d(d_model, height, width):
 
 
 class EmbeddingLayer(nn.Module):
-    def __init__(self, in_chans, embed_dim, img_size, patch_size, has_cls_token, has_basic_poe):
+    def __init__(self, in_chans, embed_dim, img_size, patch_size, has_cls_token, has_basic_poe, use_sasa):
         super().__init__()
 
         self.num_tokens = (img_size // patch_size) ** 2
@@ -72,6 +74,11 @@ class EmbeddingLayer(nn.Module):
             # self.cls_token = nn.Parameter(torch.randn(1, 1, embed_dim))
 
             self.num_tokens += 1
+
+        # if use_sasa:
+        #     self.register_buffer('pos_embed', torch.zeros(1, self.num_tokens, self.embed_dim))
+        # else:
+
         if has_basic_poe:
             self.pos_embed = nn.Parameter(torch.zeros(1, self.num_tokens, self.embed_dim))
             trunc_normal_(self.pos_embed, std=.02)
@@ -155,12 +162,19 @@ class Block(nn.Module):
 
     def __init__(self, dim, num_heads, mlp_ratio=2., qkv_bias=False,
                  drop=0., attn_drop=0., drop_path=0.1, act_layer=nn.GELU, norm_layer=nn.LayerNorm,
+                 use_sasa=False, use_gpsa=False
                  ):
         super().__init__()
 
         self.norm1 = norm_layer(dim)
         self.norm2 = norm_layer(dim)
-        self.attn = MSA(dim, num_heads=num_heads, qkv_bias=qkv_bias, attn_drop=attn_drop, proj_drop=drop)
+        if use_gpsa:
+            self.attn = GPSA(dim, num_heads=num_heads, qkv_bias=qkv_bias, attn_drop=attn_drop, proj_drop=drop)
+        else:
+            if use_sasa:
+                self.attn = SASA(dim, num_heads=num_heads, qkv_bias=qkv_bias, attn_drop=attn_drop, proj_drop=drop)
+            else:
+                self.attn = MSA(dim, num_heads=num_heads, qkv_bias=qkv_bias, attn_drop=attn_drop, proj_drop=drop)
         self.mlp = MLP(in_features=dim, hidden_features=int(dim * mlp_ratio), act_layer=act_layer, drop=drop)
         self.drop_path1 = DropPath(drop_path) if drop_path > 0. else nn.Identity()
         self.drop_path2 = DropPath(drop_path) if drop_path > 0. else nn.Identity()
@@ -175,7 +189,7 @@ class TomViT(nn.Module):
     def __init__(self, img_size=32, patch_size=4, in_chans=3, num_classes=10, embed_dim=192, depth=9,
                  num_heads=12, mlp_ratio=2., qkv_bias=False, drop_rate=0., attn_drop_rate=0., drop_path=0.,
                  has_cls_token=True, has_last_norm=True, has_basic_poe=True, has_auto_encoder=False,
-                 has_xavier_init=False,
+                 use_sasa=False, use_gpsa=False,
                  ):
         super().__init__()
 
@@ -186,19 +200,21 @@ class TomViT(nn.Module):
 
         # auto encoder
         self.has_auto_encoder = has_auto_encoder
-        self.has_xavier_init = has_xavier_init
+        self.use_sasa = use_sasa
+        self.use_gpsa = use_gpsa
 
         self.num_classes = num_classes
         self.num_features = self.embed_dim = embed_dim  # num_features for consistency with other models
         norm_layer = nn.LayerNorm
         act_layer = nn.GELU
 
-        self.patch_embed = EmbeddingLayer(in_chans, embed_dim, img_size, patch_size, has_cls_token, has_basic_poe)
+        self.patch_embed = EmbeddingLayer(in_chans, embed_dim, img_size, patch_size, has_cls_token, has_basic_poe, use_sasa)
 
         self.blocks = nn.Sequential(*[
             Block(
                 dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, drop=drop_rate,
-                attn_drop=attn_drop_rate, drop_path=drop_path, act_layer=act_layer, norm_layer=norm_layer)
+                attn_drop=attn_drop_rate, drop_path=drop_path, act_layer=act_layer, norm_layer=norm_layer,
+                use_sasa=use_sasa, use_gpsa=use_gpsa)
             for i in range(depth)])
 
         # last norm
@@ -213,9 +229,9 @@ class TomViT(nn.Module):
             self.ae = AutoEncoder(img_size, int(img_size//patch_size), embed_dim, has_cls_token)
 
         # FIXME
-        # xavier init
-        if self.has_xavier_init:
-            self.apply(init_weights)
+        # xavier init - make model's performance go bad
+        # if self.has_xavier_init:
+        #     self.apply(init_weights)
 
         # count params
         print("num_params : ", self.count_parameters())
